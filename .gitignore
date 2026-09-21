@@ -5,6 +5,7 @@
 
 # Node.js dependencies & build outputs
 node_modules/
+dist/
 frontend/dist/
 frontend/node_modules/
 .vercel/

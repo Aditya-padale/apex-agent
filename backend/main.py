@@ -88,6 +88,11 @@ class TestSandboxRequest(BaseModel):
     command: Optional[str] = None
     setup_command: Optional[str] = None
 
+@app.get("/")
+@app.get("/api")
+def api_root():
+    return {"status": "ok", "message": "ApexAgent Backend Core API", "version": "1.0.0"}
+
 @app.get("/api/health")
 def health_check():
     return {"status": "ok", "service": "ApexAgent Backend Core"}
