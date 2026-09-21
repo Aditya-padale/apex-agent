@@ -1,7 +1,19 @@
-# Local credentials and machine-specific configuration
+# Environment variables & secrets
 .env
 *.env
 !.env.example
 
-# Installed JavaScript dependencies
+# Node.js dependencies & build outputs
 node_modules/
+frontend/dist/
+frontend/node_modules/
+.vercel/
+
+# Python cache & virtual environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+venv/
+.venv/

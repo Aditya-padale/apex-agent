@@ -1,0 +1,23 @@
+{
+  "name": "apex-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Autonomous Agentic Coding & Debugging Platform powered by Gemini 2.5 Flash",
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "uvicorn backend.main:app --reload --port 8000",
+    "build": "cd frontend && npm run build",
+    "preview": "cd frontend && npm run preview"
+  },
+  "keywords": [
+    "agentic-ai",
+    "coding-agent",
+    "fastapi",
+    "react",
+    "vercel",
+    "serverless",
+    "gemini"
+  ],
+  "author": "Aditya Padale",
+  "license": "MIT"
+}
