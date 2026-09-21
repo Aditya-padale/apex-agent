@@ -2,3 +2,6 @@
 .env
 *.env
 !.env.example
+
+# Installed JavaScript dependencies
+node_modules/
