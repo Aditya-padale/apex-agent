@@ -107,7 +107,7 @@ def get_scenario_details(scenario_id: str):
     return {"scenario": sc}
 
 @app.post("/api/run-agent")
-async def run_agent_stream(req: RunAgentRequest, x_api_key: Optional[str] = Header(None)):
+async def run_agent_stream(request: Request, req: RunAgentRequest, x_api_key: Optional[str] = Header(None)):
     """
     Server-Sent Events (SSE) endpoint streaming real-time ReAct loop iterations:
     Thought -> Tool Call -> Sandbox Observation -> Self-Correction -> Verification.
@@ -141,12 +141,18 @@ async def run_agent_stream(req: RunAgentRequest, x_api_key: Optional[str] = Head
     async def event_generator():
         try:
             async for sse_item in run:
+                # Check if client disconnected
+                if await request.is_disconnected():
+                    break
                 event_name = sse_item["event"]
                 data_str = json.dumps(sse_item["data"])
                 yield f"event: {event_name}\ndata: {data_str}\n\n"
         except Exception as e:
             err_str = json.dumps({"error": str(e)})
             yield f"event: error\ndata: {err_str}\n\n"
+        finally:
+            # Ensure the async generator is closed so the sandbox is cleaned up
+            await run.aclose()
 
     return StreamingResponse(
         event_generator(),
@@ -159,7 +165,7 @@ async def run_agent_stream(req: RunAgentRequest, x_api_key: Optional[str] = Head
     )
 
 @app.post("/api/test-sandbox")
-def test_sandbox(req: TestSandboxRequest):
+async def test_sandbox(req: TestSandboxRequest):
     """Run a single file (legacy) or an imported project validation command."""
     if req.workspace_files is not None:
         workspace_files = validate_workspace_files(req.workspace_files)
@@ -171,31 +177,31 @@ def test_sandbox(req: TestSandboxRequest):
     sandbox = SandboxEnvironment()
     try:
         for file_path, content in workspace_files.items():
-            write_result = sandbox.write_file(file_path, content)
+            write_result = await asyncio.to_thread(sandbox.write_file, file_path, content)
             if not write_result.get("success"):
                 raise HTTPException(status_code=422, detail=write_result.get("error", "Could not create workspace file."))
 
         setup_result = None
         if req.setup_command:
-            setup_result = sandbox.run_command(req.setup_command)
+            setup_result = await asyncio.to_thread(sandbox.run_command, req.setup_command)
             if not setup_result.get("success"):
                 return {
                     "success": False,
                     "sandbox_result": setup_result,
                     "setup_result": setup_result,
-                    "workspace_files": sandbox.list_dir(),
+                    "workspace_files": await asyncio.to_thread(sandbox.list_dir),
                 }
 
-        result = (
-            sandbox.run_command(req.command)
-            if req.command
-            else sandbox.run_python_script(req.script_name)
+        result = await asyncio.to_thread(
+            sandbox.run_command, req.command
+        ) if req.command else await asyncio.to_thread(
+            sandbox.run_python_script, req.script_name
         )
         return {
             "success": result.get("success", False),
             "sandbox_result": result,
             "setup_result": setup_result,
-            "workspace_files": sandbox.list_dir()
+            "workspace_files": await asyncio.to_thread(sandbox.list_dir),
         }
     finally:
         sandbox.cleanup()

@@ -38,6 +38,7 @@ You must be relentless in making tests pass cleanly. Never give up on a tracebac
 
 DEFAULT_MODEL = "gemini-2.5-flash"
 
+
 class ApexAgentEngine:
     """
     Manages the ReAct execution loop, Gemini API communication, sandbox tool execution,
@@ -63,7 +64,7 @@ class ApexAgentEngine:
         try:
             # 1. Populate Sandbox Workspace with scenario initial files
             for file_name, code in scenario["initial_files"].items():
-                sandbox.write_file(file_name, code)
+                await asyncio.to_thread(sandbox.write_file, file_name, code)
                 yield {
                     "event": "workspace_update",
                     "data": {
@@ -88,7 +89,7 @@ class ApexAgentEngine:
             }
 
             if not self.api_key:
-                # Run high-fidelity real sandbox execution simulation
+                # Run scripted demo sandbox execution
                 async for event in self._run_sandbox_simulation(sandbox, scenario, user_goal):
                     yield event
                 return
@@ -121,8 +122,8 @@ class ApexAgentEngine:
                     "data": {"step": turn, "max_turns": max_turns}
                 }
 
-                # Call Gemini API
-                response = client.models.generate_content(
+                # Call Gemini API (async)
+                response = await client.aio.models.generate_content(
                     model=self.model_name,
                     contents=contents,
                     config=config
@@ -167,8 +168,8 @@ class ApexAgentEngine:
                         }
                     }
 
-                    # Dispatch to sandbox environment
-                    result = dispatcher.dispatch(fn_name, fn_args)
+                    # Dispatch to sandbox environment (in a thread to avoid blocking)
+                    result = await asyncio.to_thread(dispatcher.dispatch, fn_name, fn_args)
 
                     # Stream observation event
                     yield {
@@ -182,7 +183,10 @@ class ApexAgentEngine:
 
                     # Handle special file write event to stream updated workspace code
                     if fn_name == "write_file" and result.get("success"):
-                        file_content = sandbox.read_file(fn_args.get("file_path", "")).get("content", "")
+                        file_content_result = await asyncio.to_thread(
+                            sandbox.read_file, fn_args.get("file_path", "")
+                        )
+                        file_content = file_content_result.get("content", "")
                         yield {
                             "event": "workspace_update",
                             "data": {
@@ -213,8 +217,6 @@ class ApexAgentEngine:
 
                     contents.append(model_message)
                     contents.append(types.Content(role="user", parts=[function_response_part]))
-
-                await asyncio.sleep(0.1)
 
             if not task_completed and turn >= max_turns:
                 yield {
@@ -255,7 +257,7 @@ class ApexAgentEngine:
                 raise ValueError("Add at least one project file before starting the agent.")
 
             for file_name, content in workspace_files.items():
-                write_result = sandbox.write_file(file_name, content)
+                write_result = await asyncio.to_thread(sandbox.write_file, file_name, content)
                 if not write_result.get("success"):
                     raise ValueError(write_result.get("error", f"Could not import {file_name}"))
                 yield {
@@ -287,7 +289,7 @@ class ApexAgentEngine:
                 }
                 turns = 1
                 if setup_command:
-                    setup_result = sandbox.run_command(setup_command)
+                    setup_result = await asyncio.to_thread(sandbox.run_command, setup_command)
                     yield {
                         "event": "tool_call",
                         "data": {"step": turns, "tool_name": "run_command", "arguments": {"command": setup_command}},
@@ -309,7 +311,7 @@ class ApexAgentEngine:
                     turns += 1
 
                 if validation_command:
-                    validation_result = sandbox.run_command(validation_command)
+                    validation_result = await asyncio.to_thread(sandbox.run_command, validation_command)
                     yield {
                         "event": "tool_call",
                         "data": {"step": turns, "tool_name": "run_command", "arguments": {"command": validation_command}},
@@ -368,7 +370,8 @@ class ApexAgentEngine:
                 turn += 1
                 yield {"event": "step_start", "data": {"step": turn, "max_turns": max_turns}}
 
-                response = client.models.generate_content(
+                # Async Gemini call
+                response = await client.aio.models.generate_content(
                     model=self.model_name,
                     contents=contents,
                     config=config,
@@ -399,7 +402,8 @@ class ApexAgentEngine:
                         "data": {"step": turn, "tool_name": fn_name, "arguments": fn_args},
                     }
 
-                    result = dispatcher.dispatch(fn_name, fn_args)
+                    # Dispatch in thread to avoid blocking the event loop
+                    result = await asyncio.to_thread(dispatcher.dispatch, fn_name, fn_args)
                     if fn_name == "finish_task" and not has_verified_run:
                         result = {
                             "success": False,
@@ -412,7 +416,10 @@ class ApexAgentEngine:
                     }
 
                     if fn_name == "write_file" and result.get("success"):
-                        file_content = sandbox.read_file(fn_args.get("file_path", "")).get("content", "")
+                        file_content_result = await asyncio.to_thread(
+                            sandbox.read_file, fn_args.get("file_path", "")
+                        )
+                        file_content = file_content_result.get("content", "")
                         yield {
                             "event": "workspace_update",
                             "data": {
@@ -441,7 +448,6 @@ class ApexAgentEngine:
                 if not task_completed:
                     contents.append(model_message)
                     contents.append(types.Content(role="user", parts=response_parts))
-                await asyncio.sleep(0.1)
 
             if not task_completed:
                 yield {
@@ -464,7 +470,7 @@ class ApexAgentEngine:
         goal: str
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
-        Executes a real sandbox subprocess simulation for out-of-the-box demonstration
+        Executes a scripted demo for out-of-the-box demonstration
         when an API key is not provided. Performs real pytest executions and real file updates.
         """
         yield {
@@ -477,7 +483,7 @@ class ApexAgentEngine:
         await asyncio.sleep(1.0)
 
         # Step 1: Run pytest in sandbox to see failure traceback
-        res_pytest1 = sandbox.run_pytest()
+        res_pytest1 = await asyncio.to_thread(sandbox.run_pytest)
         yield {
             "event": "tool_call",
             "data": {
@@ -620,7 +626,7 @@ class HttpClient:
 '''
 
         # Write file fix tool call
-        write_res = sandbox.write_file(fix_filename, fixed_code)
+        write_res = await asyncio.to_thread(sandbox.write_file, fix_filename, fixed_code)
         yield {
             "event": "tool_call",
             "data": {
@@ -657,7 +663,7 @@ class HttpClient:
         }
         await asyncio.sleep(1.0)
 
-        res_pytest2 = sandbox.run_pytest()
+        res_pytest2 = await asyncio.to_thread(sandbox.run_pytest)
         yield {
             "event": "tool_call",
             "data": {
