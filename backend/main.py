@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from scenarios.loader import SCENARIOS, get_scenario
 from agent.core import ApexAgentEngine, DEFAULT_MODEL
-from sandbox.runner import SandboxEnvironment
+from sandbox.runner import SandboxEnvironment, ALLOW_CODE_EXECUTION
 
 app = FastAPI(
     title="ApexAgent API",
@@ -120,6 +120,11 @@ async def run_agent_stream(request: Request, req: RunAgentRequest, x_api_key: Op
     )
 
     if req.workspace_files is not None:
+        if not ALLOW_CODE_EXECUTION:
+            raise HTTPException(
+                status_code=403,
+                detail="Execution of user-supplied workspace code is disabled on this server. Set ALLOW_CODE_EXECUTION=true to enable it.",
+            )
         workspace_files = validate_workspace_files(req.workspace_files)
         run = engine.run_workspace(
             workspace_files=workspace_files,
@@ -167,6 +172,11 @@ async def run_agent_stream(request: Request, req: RunAgentRequest, x_api_key: Op
 @app.post("/api/test-sandbox")
 async def test_sandbox(req: TestSandboxRequest):
     """Run a single file (legacy) or an imported project validation command."""
+    if not ALLOW_CODE_EXECUTION:
+        raise HTTPException(
+            status_code=403,
+            detail="Execution of user-supplied workspace code is disabled on this server. Set ALLOW_CODE_EXECUTION=true to enable it.",
+        )
     if req.workspace_files is not None:
         workspace_files = validate_workspace_files(req.workspace_files)
     elif req.code is not None:

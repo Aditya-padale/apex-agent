@@ -6,12 +6,23 @@ import tempfile
 import pathlib
 import re
 import shlex
-from typing import Dict, Any, List, Optional
+import resource
+import signal
+import logging
+from typing import Dict, Any, List, Optional, Tuple
 
+logger = logging.getLogger(__name__)
 
-# These are deliberately command *entry points*, not shell snippets. Commands are
-# parsed with shlex and executed with shell=False, so a validation command cannot
-# use pipes, redirects, command substitution, or chained shell commands.
+# ---------------------------------------------------------------------------
+# IMPORTANT — honest security disclaimer
+# ---------------------------------------------------------------------------
+# Subprocess isolation here is NOT a security boundary. It mitigates accidental
+# damage (runaway processes, disk fills) but will not stop a determined attacker.
+# For untrusted code, use a container, VM, or service like gVisor / Firecracker.
+# ---------------------------------------------------------------------------
+
+# Allowed command entry points. Commands are parsed with shlex and executed
+# with shell=False, preventing shell pipes, redirects, and chaining.
 ALLOWED_COMMANDS = {
     "python", "python3", "pip", "pip3", "pytest", "node", "npm", "npx", "pnpm", "yarn", "bun", "deno",
     "go", "cargo", "java", "javac", "kotlinc", "kotlin", "dotnet", "php", "ruby", "rspec",
@@ -20,11 +31,103 @@ ALLOWED_COMMANDS = {
 MAX_COMMAND_LENGTH = 800
 MAX_PROCESS_OUTPUT = 60_000
 
+# Environment flags
+ALLOW_CODE_EXECUTION = os.environ.get("ALLOW_CODE_EXECUTION", "false").lower() in ("true", "1", "yes")
+ALLOW_PACKAGE_INSTALL = os.environ.get("ALLOW_PACKAGE_INSTALL", "false").lower() in ("true", "1", "yes")
+
+# POSIX resource limits for child processes
+_RLIMIT_CPU = 120                  # CPU seconds
+_RLIMIT_AS = 512 * 1024 * 1024     # 512 MB virtual memory
+_RLIMIT_NPROC = 64                 # max child processes
+_RLIMIT_FSIZE = 50 * 1024 * 1024   # 50 MB max file size
+_RLIMIT_NOFILE = 256               # max open file descriptors
+
+# Flags that execute inline code
+_INLINE_CODE_FLAGS = {"-c", "-e", "-p", "--print", "--eval"}
+
+# Regex for combined short flags like -Sc, -ce, -ic
+_COMBINED_SHORT_FLAG_RE = re.compile(r"^-[A-Za-z]*[cepm][A-Za-z0-9]*$")
+
+# Python modules that start network servers
+_HTTP_SERVER_RE = re.compile(r"^(http\.server|SimpleHTTPServer|socketserver)$")
+
+# Package installation subcommands
+_INSTALL_SUBCOMMANDS = {"install", "add", "i"}
+
+
+def _probe_isolation() -> Tuple[Optional[str], Optional[str]]:
+    """Probe if bwrap or unshare is present AND functional in this environment."""
+    bwrap = shutil.which("bwrap")
+    unshare = shutil.which("unshare")
+
+    functional_bwrap: Optional[str] = None
+    functional_unshare: Optional[str] = None
+
+    if bwrap:
+        try:
+            r = subprocess.run(
+                [bwrap, "--ro-bind", "/", "/", "--dev", "/dev", "--proc", "/proc",
+                 "--tmpfs", "/tmp", "--unshare-net", "--unshare-pid", "--die-with-parent", "--", "true"],
+                capture_output=True,
+                timeout=2,
+            )
+            if r.returncode == 0:
+                functional_bwrap = bwrap
+            else:
+                logger.info("bwrap on PATH but not functional in this environment: %s", r.stderr.decode(errors="ignore").strip())
+        except Exception as e:
+            logger.info("bwrap probe failed: %s", e)
+
+    if unshare and not functional_bwrap:
+        try:
+            r = subprocess.run(
+                [unshare, "--net", "--pid", "--fork", "--mount-proc", "--", "true"],
+                capture_output=True,
+                timeout=2,
+            )
+            if r.returncode == 0:
+                functional_unshare = unshare
+            else:
+                logger.info("unshare on PATH but not functional in this environment: %s", r.stderr.decode(errors="ignore").strip())
+        except Exception as e:
+            logger.info("unshare probe failed: %s", e)
+
+    return functional_bwrap, functional_unshare
+
+
+_FUNCTIONAL_BWRAP, _FUNCTIONAL_UNSHARE = _probe_isolation()
+_ISOLATION_WARNING_LOGGED = False
+
+
+def _log_isolation_warning_once():
+    global _ISOLATION_WARNING_LOGGED
+    if not _ISOLATION_WARNING_LOGGED:
+        if not _FUNCTIONAL_BWRAP and not _FUNCTIONAL_UNSHARE:
+            logger.warning(
+                "Neither bwrap nor unshare is functional on this system. "
+                "Sandbox isolation is degraded: child processes share host filesystem and network."
+            )
+        _ISOLATION_WARNING_LOGGED = True
+
+
+def _set_resource_limits():
+    """preexec_fn: set POSIX resource limits on the child process."""
+    try:
+        resource.setrlimit(resource.RLIMIT_CPU, (_RLIMIT_CPU, _RLIMIT_CPU))
+        resource.setrlimit(resource.RLIMIT_AS, (_RLIMIT_AS, _RLIMIT_AS))
+        resource.setrlimit(resource.RLIMIT_NPROC, (_RLIMIT_NPROC, _RLIMIT_NPROC))
+        resource.setrlimit(resource.RLIMIT_FSIZE, (_RLIMIT_FSIZE, _RLIMIT_FSIZE))
+        resource.setrlimit(resource.RLIMIT_NOFILE, (_RLIMIT_NOFILE, _RLIMIT_NOFILE))
+    except (ValueError, OSError):
+        pass
+
+
 class SandboxEnvironment:
     """
-    Secure subprocess execution sandbox for agentic code runner.
-    Provides isolated workspace directory management, script execution,
-    pytest execution, traceback capture, and file safety checks.
+    Subprocess execution sandbox for the agentic code runner.
+
+    SECURITY NOTICE: This is NOT a secure container. It applies resource limits
+    and command allowlisting, but does not provide hardware or OS-level virtualization.
     """
     def __init__(self, base_dir: Optional[str] = None):
         if base_dir:
@@ -35,14 +138,29 @@ class SandboxEnvironment:
             self.temp_dir = tempfile.TemporaryDirectory(prefix="apex_sandbox_")
             self.workspace_dir = pathlib.Path(self.temp_dir.name).resolve()
             self._is_temp = True
+        _log_isolation_warning_once()
 
     def _resolve_safe_path(self, relative_path: str) -> pathlib.Path:
-        """Ensure path is within the workspace sandbox directory."""
-        target = (self.workspace_dir / relative_path).resolve()
+        """Ensure path is within the workspace sandbox directory.
+
+        Rejects path traversal and symlinks that point outside the workspace.
+        """
+        raw_target = self.workspace_dir / relative_path
+        target = raw_target.resolve()
+
         try:
             target.relative_to(self.workspace_dir)
         except ValueError:
             raise PermissionError(f"Access denied: Path '{relative_path}' escapes sandbox boundary.")
+
+        # Check for symlink escaping sandbox boundary
+        if raw_target.is_symlink():
+            link_dest = raw_target.resolve()
+            try:
+                link_dest.relative_to(self.workspace_dir)
+            except ValueError:
+                raise PermissionError(f"Access denied: Symlink '{relative_path}' points outside sandbox boundary.")
+
         return target
 
     def _command_environment(self) -> Dict[str, str]:
@@ -82,9 +200,93 @@ class SandboxEnvironment:
         if executable not in ALLOWED_COMMANDS:
             allowed = ", ".join(sorted(ALLOWED_COMMANDS))
             raise PermissionError(f"'{executable}' is not an allowed workspace command. Allowed: {allowed}.")
-        if "-c" in parts or "--eval" in parts:
-            raise PermissionError("Inline code execution is not allowed. Put the code in a workspace file instead.")
+
+        # Check each argument for blocked flags and patterns
+        for arg in parts[1:]:
+            if arg in _INLINE_CODE_FLAGS:
+                raise PermissionError(
+                    f"Inline code execution flag '{arg}' is not allowed. Put the code in a workspace file instead."
+                )
+            if arg.startswith("-") and not arg.startswith("--") and len(arg) > 2:
+                if _COMBINED_SHORT_FLAG_RE.match(arg):
+                    raise PermissionError(
+                        f"Combined flag '{arg}' contains an inline code execution option. Put the code in a workspace file instead."
+                    )
+
+        # Check for network servers: -m http.server
+        if "-m" in parts:
+            m_idx = parts.index("-m")
+            if m_idx + 1 < len(parts) and _HTTP_SERVER_RE.match(parts[m_idx + 1]):
+                raise PermissionError(f"Network server module '{parts[m_idx + 1]}' is not allowed in the sandbox.")
+
+        # Check for package installs
+        allow_install = os.environ.get("ALLOW_PACKAGE_INSTALL", "false").lower() in ("true", "1", "yes")
+        if not allow_install:
+            if executable in {"pip", "pip3", "npm", "npx", "pnpm", "yarn", "bun"}:
+                for arg in parts[1:]:
+                    if arg in _INSTALL_SUBCOMMANDS:
+                        raise PermissionError(
+                            f"Package installation ('{executable} {arg}') is blocked. Set ALLOW_PACKAGE_INSTALL=true to enable."
+                        )
+
         return parts
+
+    def _wrap_with_isolation(self, parts: List[str], cwd: str) -> List[str]:
+        """Wrap command with bwrap or unshare if functional."""
+        if _FUNCTIONAL_BWRAP:
+            return [
+                _FUNCTIONAL_BWRAP,
+                "--ro-bind", "/", "/",
+                "--bind", str(self.workspace_dir), str(self.workspace_dir),
+                "--dev", "/dev",
+                "--proc", "/proc",
+                "--tmpfs", "/tmp",
+                "--unshare-net",
+                "--unshare-pid",
+                "--die-with-parent",
+                "--chdir", cwd,
+                "--",
+            ] + parts
+        elif _FUNCTIONAL_UNSHARE:
+            return [
+                _FUNCTIONAL_UNSHARE,
+                "--net",
+                "--pid",
+                "--fork",
+                "--mount-proc",
+                "--",
+            ] + parts
+        return parts
+
+    def _run_subprocess(
+        self,
+        parts: List[str],
+        cwd: str,
+        timeout: int,
+        env: Dict[str, str],
+    ) -> subprocess.CompletedProcess:
+        """Run subprocess with process group isolation, resource limits, and timeout kill."""
+        wrapped = self._wrap_with_isolation(parts, cwd)
+        proc = subprocess.Popen(
+            wrapped,
+            cwd=cwd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            env=env,
+            start_new_session=True,
+            preexec_fn=_set_resource_limits,
+        )
+        try:
+            stdout, stderr = proc.communicate(timeout=max(1, min(timeout, 180)))
+            return subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except (ProcessLookupError, PermissionError, OSError):
+                pass
+            stdout, stderr = proc.communicate()
+            raise subprocess.TimeoutExpired(proc.args, timeout, output=stdout, stderr=stderr)
 
     def run_command(
         self,
@@ -92,25 +294,15 @@ class SandboxEnvironment:
         working_directory: str = ".",
         timeout: int = 60,
     ) -> Dict[str, Any]:
-        """Run a supported test, build, or lint command in the temporary workspace.
+        """Run a supported test, build, or lint command in the temporary workspace."""
+        parts = self._parse_allowed_command(command)
+        cwd = self._resolve_safe_path(working_directory)
+        if not cwd.is_dir():
+            raise NotADirectoryError(f"Working directory not found: {working_directory}")
 
-        This is intentionally shell-free. Project scripts (for example ``npm run
-        test:e2e``) still execute code supplied by that project, so callers should
-        only import projects they trust.
-        """
         try:
-            parts = self._parse_allowed_command(command)
-            cwd = self._resolve_safe_path(working_directory)
-            if not cwd.is_dir():
-                raise NotADirectoryError(f"Working directory not found: {working_directory}")
-
-            result = subprocess.run(
-                parts,
-                cwd=str(cwd),
-                capture_output=True,
-                text=True,
-                timeout=max(1, min(timeout, 180)),
-                env=self._command_environment(),
+            result = self._run_subprocess(
+                parts, str(cwd), timeout, self._command_environment()
             )
             return {
                 "success": result.returncode == 0,
@@ -141,9 +333,15 @@ class SandboxEnvironment:
 
     def write_file(self, file_path: str, content: str) -> Dict[str, Any]:
         """Write or update a file inside the sandbox."""
+        target = self._resolve_safe_path(file_path)
         try:
-            target = self._resolve_safe_path(file_path)
             target.parent.mkdir(parents=True, exist_ok=True)
+            if target.is_symlink():
+                link_dest = target.resolve()
+                try:
+                    link_dest.relative_to(self.workspace_dir)
+                except ValueError:
+                    raise PermissionError(f"Access denied: Symlink '{file_path}' points outside sandbox boundary.")
             target.write_text(content, encoding="utf-8")
             return {
                 "success": True,
@@ -156,10 +354,16 @@ class SandboxEnvironment:
 
     def read_file(self, file_path: str) -> Dict[str, Any]:
         """Read content of a file inside the sandbox."""
+        target = self._resolve_safe_path(file_path)
         try:
-            target = self._resolve_safe_path(file_path)
             if not target.exists():
                 return {"success": False, "error": f"File not found: {file_path}"}
+            if target.is_symlink():
+                link_dest = target.resolve()
+                try:
+                    link_dest.relative_to(self.workspace_dir)
+                except ValueError:
+                    raise PermissionError(f"Access denied: Symlink '{file_path}' points outside sandbox boundary.")
             content = target.read_text(encoding="utf-8")
             return {
                 "success": True,
@@ -214,10 +418,7 @@ class SandboxEnvironment:
             return {"success": False, "error": str(e)}
 
     def run_python_script(self, script_path: str, args: List[str] = None, timeout: int = 10) -> Dict[str, Any]:
-        """
-        Execute a Python script inside the sandbox in an isolated subprocess.
-        Captures stdout, stderr, exit code, execution time, and error tracebacks.
-        """
+        """Execute a Python script inside the sandbox in an isolated subprocess."""
         if args is None:
             args = []
         try:
@@ -232,22 +433,17 @@ class SandboxEnvironment:
                 }
 
             cmd = [sys.executable, str(target)] + args
-            res = subprocess.run(
-                cmd,
-                cwd=str(self.workspace_dir),
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                env=self._command_environment()
+            result = self._run_subprocess(
+                cmd, str(self.workspace_dir), timeout, self._command_environment()
             )
 
-            is_clean = res.returncode == 0
+            is_clean = result.returncode == 0
             return {
                 "success": is_clean,
-                "exit_code": res.returncode,
-                "stdout": res.stdout,
-                "stderr": res.stderr,
-                "has_traceback": "Traceback (most recent call last):" in res.stderr or "Error" in res.stderr
+                "exit_code": result.returncode,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "has_traceback": "Traceback (most recent call last):" in result.stderr,
             }
 
         except subprocess.TimeoutExpired:
@@ -270,9 +466,7 @@ class SandboxEnvironment:
             }
 
     def run_pytest(self, test_path: Optional[str] = None, timeout: int = 15) -> Dict[str, Any]:
-        """
-        Execute pytest inside the sandbox workspace.
-        """
+        """Execute pytest inside the sandbox workspace."""
         try:
             cmd = [sys.executable, "-m", "pytest", "-v"]
             if test_path:
@@ -281,23 +475,18 @@ class SandboxEnvironment:
             else:
                 cmd.append(str(self.workspace_dir))
 
-            res = subprocess.run(
-                cmd,
-                cwd=str(self.workspace_dir),
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                env=self._command_environment()
+            result = self._run_subprocess(
+                cmd, str(self.workspace_dir), timeout, self._command_environment()
             )
 
-            is_clean = res.returncode == 0
+            is_clean = result.returncode == 0
             return {
                 "success": is_clean,
-                "exit_code": res.returncode,
-                "stdout": res.stdout,
-                "stderr": res.stderr,
-                "passed": "passed" in res.stdout,
-                "failed": "failed" in res.stdout or "ERROR" in res.stdout
+                "exit_code": result.returncode,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "passed": "passed" in result.stdout,
+                "failed": "failed" in result.stdout or "ERROR" in result.stdout
             }
         except subprocess.TimeoutExpired:
             return {

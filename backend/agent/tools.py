@@ -137,45 +137,48 @@ class ToolDispatcher:
 
     def dispatch(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Dispatch tool invocation and return structured result."""
-        if tool_name == "write_file":
-            return self.sandbox.write_file(
-                file_path=arguments.get("file_path", ""),
-                content=arguments.get("content", "")
-            )
-        elif tool_name == "read_file":
-            return self.sandbox.read_file(
-                file_path=arguments.get("file_path", "")
-            )
-        elif tool_name == "list_dir":
-            return self.sandbox.list_dir(
-                sub_path=arguments.get("sub_path", ".")
-            )
-        elif tool_name == "search_code":
-            return self.sandbox.search_code(
-                query=arguments.get("query", "")
-            )
-        elif tool_name == "run_sandbox_python":
-            return self.sandbox.run_python_script(
-                script_path=arguments.get("script_path", ""),
-                args=arguments.get("args", [])
-            )
-        elif tool_name == "run_pytest":
-            return self.sandbox.run_pytest(
-                test_path=arguments.get("test_path")
-            )
-        elif tool_name == "run_command":
-            return self.sandbox.run_command(
-                command=arguments.get("command", ""),
-                working_directory=arguments.get("working_directory", ".")
-            )
-        elif tool_name == "finish_task":
-            return {
-                "success": True,
-                "finished": True,
-                "summary": arguments.get("summary", "Task complete.")
-            }
-        else:
-            return {
-                "success": False,
-                "error": f"Unknown tool: '{tool_name}'"
-            }
+        try:
+            if tool_name == "write_file":
+                return self.sandbox.write_file(
+                    file_path=arguments.get("file_path", ""),
+                    content=arguments.get("content", "")
+                )
+            elif tool_name == "read_file":
+                return self.sandbox.read_file(
+                    file_path=arguments.get("file_path", "")
+                )
+            elif tool_name == "list_dir":
+                return self.sandbox.list_dir(
+                    sub_path=arguments.get("sub_path", ".")
+                )
+            elif tool_name == "search_code":
+                return self.sandbox.search_code(
+                    query=arguments.get("query", "")
+                )
+            elif tool_name == "run_sandbox_python":
+                return self.sandbox.run_python_script(
+                    script_path=arguments.get("script_path", ""),
+                    args=arguments.get("args", [])
+                )
+            elif tool_name == "run_pytest":
+                return self.sandbox.run_pytest(
+                    test_path=arguments.get("test_path")
+                )
+            elif tool_name == "run_command":
+                return self.sandbox.run_command(
+                    command=arguments.get("command", ""),
+                    working_directory=arguments.get("working_directory", ".")
+                )
+            elif tool_name == "finish_task":
+                return {
+                    "success": True,
+                    "finished": True,
+                    "summary": arguments.get("summary", "Task complete.")
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": f"Unknown tool: '{tool_name}'"
+                }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
