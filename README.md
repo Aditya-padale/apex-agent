@@ -1,4 +1,4 @@
-# ⚡ Apex Agent — Autonomous Agentic Coding & Debugging Platform
+# Apex Agent — Autonomous Agentic Coding & Debugging Platform
 
 <div align="center">
 
@@ -12,13 +12,13 @@
 
 **Apex Agent** is an state-of-the-art autonomous AI coding & debugging assistant designed to automatically inspect codebases, execute unit tests in isolated sandboxes, analyze tracebacks, auto-correct code errors, and verify fixes in real-time via Server-Sent Events (SSE).
 
-[🚀 Deploy to Vercel](#-vercel-deployment-guide) • [✨ Features](#-key-features) • [🏗️ Architecture](#%EF%B8%8F-architecture) • [💻 Local Setup](#-local-development-setup) • [📖 API Reference](#-api-endpoints)
+[Deploy to Vercel](#vercel-deployment-guide) • [Features](#key-features) • [Architecture](#architecture) • [Local Setup](#local-development-setup) • [API Reference](#api-endpoints)
 
 </div>
 
 ---
 
-## 📌 Overview
+## Overview
 
 Traditional AI coding assistants suggest raw snippets, leaving developers to manually test, debug tracebacks, and copy-paste code back and forth. **Apex Agent** eliminates this manual friction by implementing a full **ReAct (Reasoning + Acting)** autonomous loop:
 
@@ -36,20 +36,20 @@ Traditional AI coding assistants suggest raw snippets, leaving developers to man
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-- ⚡ **Groq LPU Engine**: Leverages high-speed Groq inference with the `openai/gpt-oss-20b` model for deep multi-turn code reasoning and function calling.
-- ⚡ **Serverless-Native Architecture**: Fully configured for 1-click deployment on **Vercel** with a unified monorepo structure (FastAPI Python Serverless Functions + React SPA).
-- 📡 **Real-Time Event Streaming (SSE)**: Streams step-by-step agent trajectories, tool invocations, stdout logs, and status updates directly to the UI.
-- 🧪 **Isolated Execution Sandbox**: Safely run Python scripts, unit test suites (pytest), search code patterns, and modify workspace files.
-- 🎯 **Benchmark Scenarios**: Built-in debugging benchmarks ranging from algorithmic edge cases (Binary Search) to corrupted log processing pipelines and async HTTP backoff retries.
-- 🎬 **Scripted Demo (no API key)**: Without an API key, the platform replays a pre-written fix for built-in scenarios while running real pytest in the sandbox. Add a Groq API key to activate the live autonomous agent.
-- 📂 **Custom Workspace Importer**: Upload and debug your own multi-file Python projects directly inside the web interface.
-- 🔐 **Secure & Flexible API Keys**: Bring your own `GROQ_API_KEY` via `X-API-Key` HTTP headers or use backend environment variables securely. Keys are never logged or echoed.
+- **Groq LPU Engine**: Leverages high-speed Groq inference with the `openai/gpt-oss-20b` model for deep multi-turn code reasoning and function calling.
+- **Serverless-Native Architecture**: Fully configured for 1-click deployment on **Vercel** with a unified monorepo structure (FastAPI Python Serverless Functions + React SPA).
+- **Real-Time Event Streaming (SSE)**: Streams step-by-step agent trajectories, tool invocations, stdout logs, and status updates directly to the UI.
+- **Isolated Execution Sandbox**: Safely run Python scripts, unit test suites (pytest), search code patterns, and modify workspace files.
+- **Benchmark Scenarios**: Built-in debugging benchmarks ranging from algorithmic edge cases (Binary Search) to corrupted log processing pipelines and async HTTP backoff retries.
+- **Scripted Demo (no API key)**: Without an API key, the platform replays a pre-written fix for built-in scenarios while running real pytest in the sandbox. Add a Groq API key to activate the live autonomous agent.
+- **Custom Workspace Importer**: Upload and debug your own multi-file Python projects directly inside the web interface.
+- **Secure & Flexible API Keys**: Bring your own `GROQ_API_KEY` via `X-API-Key` HTTP headers or use backend environment variables securely. Keys are never logged or echoed.
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 Apex Agent combines a modern React client with an asynchronous FastAPI engine, deployable either as a serverless monorepo on Vercel or with a persistent containerized backend on platforms like Railway, Render, or Fly.io.
 
@@ -88,7 +88,7 @@ flowchart TD
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 apex-agent/
@@ -119,7 +119,7 @@ apex-agent/
 
 ---
 
-## 🚀 Vercel Deployment Guide
+## Vercel Deployment Guide
 
 Deploy Apex Agent to Vercel in less than 2 minutes:
 
@@ -154,7 +154,7 @@ vercel --prod
 
 ---
 
-## 🐳 Dedicated Backend Deployment (Railway, Render, Fly.io, Docker)
+## Dedicated Backend Deployment (Railway, Render, Fly.io, Docker)
 
 To run without serverless timeout constraints, deploy the backend container on a persistent platform (such as Railway, Render, Fly.io, or any Docker host) while keeping the React frontend hosted on Vercel:
 
@@ -178,7 +178,7 @@ To run without serverless timeout constraints, deploy the backend container on a
 
 ---
 
-## 💻 Local Development Setup
+## Local Development Setup
 
 ### Prerequisites
 
@@ -274,7 +274,7 @@ npm run build
 
 ---
 
-## 📖 API Endpoints
+## API Endpoints
 
 Apex Agent exposes clean REST and SSE streaming endpoints:
 
@@ -302,19 +302,19 @@ Example JSON request body:
 
 ---
 
-## 🎯 Benchmark Scenarios
+## Benchmark Scenarios
 
 Apex Agent includes pre-built benchmark scenarios to test autonomous debugging capabilities:
 
 | Scenario | Difficulty | Description | Target Fix |
 | :--- | :---: | :--- | :--- |
-| 🔍 **Binary Search Algorithm** | `Easy` | Fixing `IndexError` and off-by-one edge cases in empty arrays. | Correct bounds (`high = len(arr) - 1`), prevent infinite loops. |
-| 📊 **Log Parser Pipeline** | `Medium` | Crashes with `TypeError` on null response times and malformed JSON lines. | Add defensive JSON decoding, null checks, and error aggregation. |
-| 🔄 **Exponential Backoff Client** | `Hard` | Implement an async HTTP retry client with backoff delay. | Write retry mechanism with delay calculation `(initial * 2^attempt)`. |
+| **Binary Search Algorithm** | `Easy` | Fixing `IndexError` and off-by-one edge cases in empty arrays. | Correct bounds (`high = len(arr) - 1`), prevent infinite loops. |
+| **Log Parser Pipeline** | `Medium` | Crashes with `TypeError` on null response times and malformed JSON lines. | Add defensive JSON decoding, null checks, and error aggregation. |
+| **Exponential Backoff Client** | `Hard` | Implement an async HTTP retry client with backoff delay. | Write retry mechanism with delay calculation `(initial * 2^attempt)`. |
 
 ---
 
-## 🛡️ Security Model & Limitations
+## Security Model & Limitations
 
 > [!CAUTION]
 > **Subprocess isolation is NOT a security boundary.**
@@ -350,7 +350,7 @@ Apex Agent includes pre-built benchmark scenarios to test autonomous debugging c
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions, issues, and feature requests are welcome!
 Feel free to check out the [issues page](https://github.com/Aditya-padale/apex-agent/issues).
@@ -363,10 +363,10 @@ Feel free to check out the [issues page](https://github.com/Aditya-padale/apex-a
 
 ---
 
-## 📄 License
+## License
 
 Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information.
 
 <div align="center">
-  <sub>Built with ❤️ by <a href="https://github.com/Aditya-padale">Aditya Padale</a></sub>
+  <sub>Built by <a href="https://github.com/Aditya-padale">Aditya Padale</a></sub>
 </div>
