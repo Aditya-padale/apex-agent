@@ -1,8 +1,10 @@
 import json
 import asyncio
+import os
+import time
 import re
 from pathlib import PurePosixPath
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -18,11 +20,14 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Enable CORS for local Vite dev server
+# CORS configuration: origin list from env, allow_credentials=False (no cookies)
+cors_origins_env = os.environ.get("CORS_ORIGINS", "http://localhost:5173")
+cors_origins = [orig.strip() for orig in cors_origins_env.split(",") if orig.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=cors_origins,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -31,6 +36,41 @@ MAX_WORKSPACE_FILES = 300
 MAX_FILE_BYTES = 1_000_000
 MAX_WORKSPACE_BYTES = 8_000_000
 SENSITIVE_WORKSPACE_FILE = re.compile(r"(^|/)\.env(?:\.|$)|\.(pem|key|p12|pfx)$", re.IGNORECASE)
+
+# Rate limiting and access token settings
+RATE_LIMIT_RPM = int(os.environ.get("RATE_LIMIT_RPM", "5"))
+APEX_ACCESS_TOKEN = os.environ.get("APEX_ACCESS_TOKEN", "").strip()
+
+# Note: In-memory rate limiting is per-instance and resets across cold starts on serverless platforms.
+_rate_limit_history: Dict[str, List[float]] = {}
+
+
+def check_rate_limit(request: Request):
+    """Enforce per-IP sliding window rate limiting."""
+    if RATE_LIMIT_RPM <= 0:
+        return
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    window = 60.0
+    history = _rate_limit_history.setdefault(client_ip, [])
+    history = [t for t in history if now - t < window]
+    _rate_limit_history[client_ip] = history
+    if len(history) >= RATE_LIMIT_RPM:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Rate limit exceeded: maximum {RATE_LIMIT_RPM} requests per minute.",
+        )
+    history.append(now)
+
+
+def verify_access_token(x_access_token: Optional[str] = Header(None)):
+    """If APEX_ACCESS_TOKEN is configured, require matching X-Access-Token header."""
+    if APEX_ACCESS_TOKEN:
+        if not x_access_token or x_access_token != APEX_ACCESS_TOKEN:
+            raise HTTPException(
+                status_code=401,
+                detail="Unauthorized: invalid or missing X-Access-Token header.",
+            )
 
 
 def validate_workspace_files(workspace_files: Dict[str, str]) -> Dict[str, str]:
@@ -77,11 +117,14 @@ class RunAgentRequest(BaseModel):
     validation_command: Optional[str] = None
     setup_command: Optional[str] = None
     model_name: Optional[str] = DEFAULT_MODEL
-    api_key: Optional[str] = None
+    api_key: Optional[str] = Field(
+        default=None,
+        deprecated=True,
+        description="Deprecated: Provide API key via X-API-Key header instead.",
+    )
     max_turns: int = Field(default=12, ge=1, le=30)
 
 class TestSandboxRequest(BaseModel):
-    # code/script_name are retained for the original single-file test button.
     code: Optional[str] = None
     script_name: str = "main.py"
     workspace_files: Optional[Dict[str, str]] = None
@@ -107,12 +150,21 @@ def get_scenario_details(scenario_id: str):
     return {"scenario": sc}
 
 @app.post("/api/run-agent")
-async def run_agent_stream(request: Request, req: RunAgentRequest, x_api_key: Optional[str] = Header(None)):
+async def run_agent_stream(
+    request: Request,
+    req: RunAgentRequest,
+    x_api_key: Optional[str] = Header(None),
+    x_access_token: Optional[str] = Header(None),
+):
     """
     Server-Sent Events (SSE) endpoint streaming real-time ReAct loop iterations:
     Thought -> Tool Call -> Sandbox Observation -> Self-Correction -> Verification.
     """
-    effective_api_key = req.api_key or x_api_key
+    verify_access_token(x_access_token)
+    check_rate_limit(request)
+
+    # API key accepted strictly via X-API-Key header (or server-side env)
+    effective_api_key = x_api_key or os.environ.get("GEMINI_API_KEY")
 
     engine = ApexAgentEngine(
         api_key=effective_api_key,
@@ -146,7 +198,6 @@ async def run_agent_stream(request: Request, req: RunAgentRequest, x_api_key: Op
     async def event_generator():
         try:
             async for sse_item in run:
-                # Check if client disconnected
                 if await request.is_disconnected():
                     break
                 event_name = sse_item["event"]
@@ -156,7 +207,6 @@ async def run_agent_stream(request: Request, req: RunAgentRequest, x_api_key: Op
             err_str = json.dumps({"error": str(e)})
             yield f"event: error\ndata: {err_str}\n\n"
         finally:
-            # Ensure the async generator is closed so the sandbox is cleaned up
             await run.aclose()
 
     return StreamingResponse(
@@ -170,8 +220,15 @@ async def run_agent_stream(request: Request, req: RunAgentRequest, x_api_key: Op
     )
 
 @app.post("/api/test-sandbox")
-async def test_sandbox(req: TestSandboxRequest):
+async def test_sandbox(
+    request: Request,
+    req: TestSandboxRequest,
+    x_access_token: Optional[str] = Header(None),
+):
     """Run a single file (legacy) or an imported project validation command."""
+    verify_access_token(x_access_token)
+    check_rate_limit(request)
+
     if not ALLOW_CODE_EXECUTION:
         raise HTTPException(
             status_code=403,

@@ -53,17 +53,16 @@ export async function streamAgentRun(params, onEvent, onError, onDone, signal) {
     const response = await fetch('/api/run-agent', {
       method: 'POST',
       headers,
-    body: JSON.stringify({
-      scenario_id: params.scenario_id,
-      workspace_files: params.workspace_files,
-      project_name: params.project_name,
-      custom_prompt: params.custom_prompt || undefined,
-      validation_command: params.validation_command || undefined,
-      setup_command: params.setup_command || undefined,
-      model_name: params.model_name || 'gemini-2.5-flash',
-      api_key: params.api_key || undefined,
-      max_turns: params.max_turns,
-    }),
+      body: JSON.stringify({
+        scenario_id: params.scenario_id,
+        workspace_files: params.workspace_files,
+        project_name: params.project_name,
+        custom_prompt: params.custom_prompt || undefined,
+        validation_command: params.validation_command || undefined,
+        setup_command: params.setup_command || undefined,
+        model_name: params.model_name || 'gemini-2.5-flash',
+        max_turns: params.max_turns,
+      }),
       signal,
     });
 
