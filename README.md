@@ -51,39 +51,39 @@ Traditional AI coding assistants suggest raw snippets, leaving developers to man
 
 ## 🏗️ Architecture
 
-Apex Agent is engineered as a monorepo combining a modern React client with a serverless FastAPI backend engine.
+Apex Agent combines a modern React client with an asynchronous FastAPI engine, deployable either as a serverless monorepo on Vercel or with a persistent containerized backend on platforms like Railway, Render, or Fly.io.
 
 ```mermaid
 flowchart TD
     subgraph Client ["Frontend (React 18 + Vite + Tailwind)"]
-        UI[User Interface & Workspace]
-        TS[Trajectory Stream Visualizer]
-        API_CLIENT[API Client / SSE Reader]
+        UI["User Interface & Workspace Viewer"]
+        TS["Trajectory Stream Visualizer (Demo/Live Badge)"]
+        API_CLIENT["API Client (SSE Reader, VITE_API_BASE_URL)"]
     end
 
-    subgraph Vercel ["Vercel Serverless Edge Platform"]
-        VERCEL_REWRITE[Vercel Route Rewriter]
-        API_FUNC["Python Serverless Function (/api/index.py)"]
+    subgraph Hosting ["Deployment Tier (Vercel Serverless OR Dedicated Docker)"]
+        GATEWAY["HTTP Gateway / Reverse Proxy"]
+        AUTH_RL["API Protection (Rate Limiting, CORS, X-Access-Token)"]
     end
 
-    subgraph Backend ["Backend Engine (FastAPI)"]
-        CORE[ApexAgentEngine]
-        SANDBOX[SandboxEnvironment]
-        SCENARIOS[Scenario Loader]
+    subgraph Backend ["Backend Engine (FastAPI + Async Python 3.11)"]
+        CORE["ApexAgentEngine (_react_loop, Budget & Retry)"]
+        SANDBOX["SandboxEnvironment (POSIX rlimits, bwrap/unshare, pgid kill)"]
+        SCENARIOS["Benchmark Scenarios Loader"]
     end
 
     subgraph Gemini ["Google AI Studio"]
-        LLM[Gemini 2.5 Flash Model]
+        LLM["Gemini 2.5 Flash (Async Client aio.models)"]
     end
 
-    UI -->|1. Submit Task / Scenario| API_CLIENT
-    API_CLIENT -->|2. POST /api/run-agent| VERCEL_REWRITE
-    VERCEL_REWRITE --> API_FUNC
-    API_FUNC --> CORE
-    CORE <-->|3. ReAct Function Call Loop| LLM
-    CORE <-->|4. Exec Script / Run Pytest| SANDBOX
-    CORE -->|5. Stream Events (SSE)| API_CLIENT
-    API_CLIENT -->|6. Render Live Trajectory| TS
+    UI -->|1. Run scenario or custom workspace| API_CLIENT
+    API_CLIENT -->|2. POST /api/run-agent with X-API-Key| GATEWAY
+    GATEWAY --> AUTH_RL
+    AUTH_RL --> CORE
+    CORE <-->|3. Async Tool Calling ReAct Loop| LLM
+    CORE <-->|4. Threaded Sandbox Exec & Pytest| SANDBOX
+    CORE -->|5. Real-Time SSE Stream (agent_start, tool_call, observation)| API_CLIENT
+    API_CLIENT -->|6. Render Live Trajectory & Code Updates| TS
 ```
 
 ---
@@ -198,8 +198,21 @@ cd apex-agent
 Create a `.env` file inside the `backend` directory (or set it in your environment):
 
 ```bash
-cp backend/.env.example backend/.env 2>/dev/null || echo "GEMINI_API_KEY=your_gemini_api_key_here" > backend/.env
+cp backend/.env.example backend/.env
 ```
+
+#### Environment Variables Reference
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `GEMINI_API_KEY` | *(None)* | Google Gemini API key. Required for autonomous tool use and live fixes. Can also be supplied per-request via `X-API-Key` header. |
+| `ALLOW_CODE_EXECUTION` | `false` | When `false`, endpoints running user-imported workspace code return HTTP 403 Forbidden. Keep `false` on public deployments. |
+| `ALLOW_PACKAGE_INSTALL` | `false` | When `false`, blocks `pip install`, `npm install`, and `yarn add` commands inside the sandbox. |
+| `CORS_ORIGINS` | `http://localhost:5173` | Comma-separated list of allowed web origins for CORS headers (`allow_credentials=False`). |
+| `APEX_ACCESS_TOKEN` | *(None)* | Optional server secret. When configured, callers must pass this exact token in the `X-Access-Token` header. |
+| `MAX_RUN_SECONDS` | `150` | Hard wall-clock budget in seconds for an agent run before emitting a clean timeout event. |
+| `RATE_LIMIT_RPM` | `5` | In-memory sliding-window per-IP rate limit on `/api/run-agent` and `/api/test-sandbox`. Set to `0` to disable. |
+| `VITE_API_BASE_URL` | `/api` | Frontend API base URL. Configure when deploying backend on a separate domain (e.g. Railway/Render). |
 
 ### 3. Backend Setup
 
@@ -208,7 +221,7 @@ cp backend/.env.example backend/.env 2>/dev/null || echo "GEMINI_API_KEY=your_ge
 python3 -m venv venv
 source venv/bin/activate   # On Windows: venv\Scripts\activate
 
-# Install dependencies
+# Install production dependencies
 pip install -r requirements.txt
 
 # Start backend FastAPI server (Port 8000)
@@ -229,6 +242,35 @@ npm run dev
 ```
 
 Open your browser and navigate to `http://localhost:5173`.
+
+### 5. Running Tests
+
+#### Backend Test Suite (Pytest)
+
+Install the development dependencies and run pytest from the repository root:
+
+```bash
+# Install test requirements
+pip install -r backend/requirements-dev.txt
+
+# Execute test suite
+pytest
+```
+
+The 33 automated tests cover:
+- **Workspace Validation**: Path traversal attempts, absolute paths, sensitive file patterns (`.env`, `.pem`, `.key`), file size limits, and file count limits.
+- **Sandbox Security & Flags**: Allowed compiler/runtime commands, blocked inline code execution flags (`-c`, `-e`, `-p`, `--print`, `--eval`), combined short flags (`-Sc`), network servers (`-m http.server`), package installs, and symlinks pointing outside the workspace.
+- **Benchmark Scenarios**: Scenario metadata integrity, loader resolution, and fallback handling.
+- **FastAPI Endpoints**: Health checks, scenario listings, 403 responses when `ALLOW_CODE_EXECUTION=false`, and `X-Access-Token` auth gating.
+- **Autonomous Agent Loop**: Simulated ReAct loop with fake Gemini async client verifying event ordering (`agent_start` → `thought` → `tool_call` → `observation` → `finished`), turn limits, and wall-clock timeout budgets.
+
+#### Frontend Build & Type Check
+
+```bash
+cd frontend
+npm ci
+npm run build
+```
 
 ---
 
