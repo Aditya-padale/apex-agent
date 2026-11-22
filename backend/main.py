@@ -51,7 +51,8 @@ _rate_limit_history: Dict[str, List[float]] = {}
 
 def check_rate_limit(request: Request):
     """Enforce per-IP sliding window rate limiting."""
-    if RATE_LIMIT_RPM <= 0:
+    limit = int(os.environ.get("RATE_LIMIT_RPM", str(RATE_LIMIT_RPM)))
+    if limit <= 0:
         return
     # Vercel terminates the client connection at its edge. Prefer the first
     # forwarding address so all visitors do not share the function proxy IP.
@@ -64,10 +65,10 @@ def check_rate_limit(request: Request):
     history = _rate_limit_history.setdefault(client_ip, [])
     history = [t for t in history if now - t < window]
     _rate_limit_history[client_ip] = history
-    if len(history) >= RATE_LIMIT_RPM:
+    if len(history) >= limit:
         raise HTTPException(
             status_code=429,
-            detail=f"Rate limit exceeded: maximum {RATE_LIMIT_RPM} requests per minute.",
+            detail=f"Rate limit exceeded: maximum {limit} requests per minute.",
         )
     history.append(now)
 

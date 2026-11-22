@@ -75,16 +75,19 @@ def _probe_isolation() -> Tuple[Optional[str], Optional[str]]:
 
     if bwrap:
         try:
-            r = subprocess.run(
-                [bwrap, "--ro-bind", "/", "/", "--dev", "/dev", "--proc", "/proc",
-                 "--tmpfs", "/tmp", "--unshare-net", "--unshare-pid", "--die-with-parent", "--", "true"],
-                capture_output=True,
-                timeout=2,
-            )
-            if r.returncode == 0:
-                functional_bwrap = bwrap
-            else:
-                logger.info("bwrap on PATH but not functional in this environment: %s", r.stderr.decode(errors="ignore").strip())
+            with tempfile.TemporaryDirectory(prefix="apex_probe_") as probe_dir:
+                r = subprocess.run(
+                    [bwrap, "--ro-bind", "/", "/", "--dev", "/dev", "--proc", "/proc",
+                     "--tmpfs", "/tmp", "--bind", probe_dir, probe_dir,
+                     "--unshare-net", "--unshare-pid", "--die-with-parent",
+                     "--chdir", probe_dir, "--", "true"],
+                    capture_output=True,
+                    timeout=2,
+                )
+                if r.returncode == 0:
+                    functional_bwrap = bwrap
+                else:
+                    logger.info("bwrap on PATH but not functional in this environment: %s", r.stderr.decode(errors="ignore").strip())
         except Exception as e:
             logger.info("bwrap probe failed: %s", e)
 
@@ -247,10 +250,10 @@ class SandboxEnvironment:
             return [
                 _FUNCTIONAL_BWRAP,
                 "--ro-bind", "/", "/",
-                "--bind", str(self.workspace_dir), str(self.workspace_dir),
                 "--dev", "/dev",
                 "--proc", "/proc",
                 "--tmpfs", "/tmp",
+                "--bind", str(self.workspace_dir), str(self.workspace_dir),
                 "--unshare-net",
                 "--unshare-pid",
                 "--die-with-parent",

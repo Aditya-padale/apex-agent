@@ -1,6 +1,9 @@
 import os
 import sys
 
+# Prevent rate-limiting false failures during test suite execution
+os.environ["RATE_LIMIT_RPM"] = "100"
+
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT_DIR = os.path.dirname(BACKEND_DIR)
 
