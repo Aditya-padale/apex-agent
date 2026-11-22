@@ -2,14 +2,16 @@
  * API client for interacting with the ApexAgent FastAPI backend.
  */
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/+$/, '');
+
 export async function fetchHealth() {
-  const res = await fetch('/api/health');
+  const res = await fetch(`${API_BASE}/health`);
   if (!res.ok) throw new Error('Health check failed');
   return res.json();
 }
 
 export async function fetchScenarios() {
-  const res = await fetch('/api/scenarios');
+  const res = await fetch(`${API_BASE}/scenarios`);
   if (!res.ok) throw new Error('Failed to fetch scenarios');
   const data = await res.json();
   return data.scenarios || [];
@@ -22,7 +24,7 @@ export async function runSandboxTest({
   command,
   setupCommand,
 }) {
-  const res = await fetch('/api/test-sandbox', {
+  const res = await fetch(`${API_BASE}/test-sandbox`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -50,7 +52,7 @@ export async function streamAgentRun(params, onEvent, onError, onDone, signal) {
       headers['X-API-Key'] = params.api_key;
     }
 
-    const response = await fetch('/api/run-agent', {
+    const response = await fetch(`${API_BASE}/run-agent`, {
       method: 'POST',
       headers,
       body: JSON.stringify({

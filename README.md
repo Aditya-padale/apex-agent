@@ -149,13 +149,40 @@ vercel --prod
 > [!NOTE]
 > Ensure you add your `GEMINI_API_KEY` in the Vercel Dashboard under **Project Settings > Environment Variables**.
 
+> [!WARNING]
+> **Serverless Limitations**: Vercel Serverless Functions have a maximum execution duration (configured to `maxDuration: 60` seconds in `vercel.json`). Long agent trajectories, large test suites, and subprocess-heavy tasks are a poor fit for serverless functions due to cold starts, execution timeouts, and ephemeral container filesystems. For production workloads with multi-turn ReAct loops, deploy the backend as a persistent service (see below).
+
+---
+
+## 🐳 Dedicated Backend Deployment (Railway, Render, Fly.io, Docker)
+
+To run without serverless timeout constraints, deploy the backend container on a persistent platform (such as Railway, Render, Fly.io, or any Docker host) while keeping the React frontend hosted on Vercel:
+
+1. **Build and run the Docker image**:
+   ```bash
+   docker build -t apex-agent-backend .
+   docker run -p 8000:8000 \
+     -e GEMINI_API_KEY="your_key" \
+     -e ALLOW_CODE_EXECUTION="false" \
+     -e CORS_ORIGINS="https://your-frontend.vercel.app" \
+     apex-agent-backend
+   ```
+   The included `Dockerfile` uses `python:3.11-slim`, installs system dependencies (including `bubblewrap` for process isolation), and runs as a non-root `apexuser`.
+
+2. **Connect the Vercel frontend**:
+   In your Vercel project settings, set:
+   ```env
+   VITE_API_BASE_URL=https://your-backend-domain.com/api
+   ```
+   The frontend API client will direct all requests to your dedicated backend instead of local serverless routes.
+
 ---
 
 ## 💻 Local Development Setup
 
 ### Prerequisites
 
-- **Python**: `3.10` or higher
+- **Python**: `3.11`
 - **Node.js**: `18.0` or higher
 - **Gemini API Key**: From [Google AI Studio](https://aistudio.google.com/)
 
@@ -245,12 +272,39 @@ Apex Agent includes pre-built benchmark scenarios to test autonomous debugging c
 
 ---
 
-## 🛡️ Security & Sandbox Safety
+## 🛡️ Security Model & Limitations
 
-- **Path Escape Prevention**: All file paths are strictly sanitized against path traversal (`..` attacks) using `pathlib.Path.relative_to`.
-- **Command Whitelisting**: Execution inside the sandbox is restricted to allowed development tools (`python`, `pytest`, `node`, etc.).
-- **Sensitive File Exclusion**: Direct upload of credential files (`.env`, `.pem`, `.key`) is automatically rejected.
-- **Resource Limits**: Enforces per-file memory limits and execution timeouts to prevent resource starvation.
+> [!CAUTION]
+> **Subprocess isolation is NOT a security boundary.**
+> The built-in sandbox applies POSIX resource limits, command allowlisting, and namespace wrapping (when available), but it is designed only to mitigate accidental damage (such as disk fills or runaway test loops). It cannot protect against a determined attacker executing arbitrary malicious code. For untrusted code execution, use a dedicated virtual machine or gVisor / Firecracker container.
+
+### Key Security Controls
+
+1. **`ALLOW_CODE_EXECUTION` Flag (Default: `false`)**:
+   - Public deployments should keep `ALLOW_CODE_EXECUTION=false`.
+   - When `false`, all endpoints that run user-supplied code (`workspace_files` on `/api/run-agent` and `/api/test-sandbox`) immediately return HTTP 403 Forbidden.
+   - Built-in benchmark scenarios remain fully functional because their initial files and test suites are statically known and safe.
+
+2. **POSIX Resource Limits (`preexec_fn`)**:
+   - Child processes run in isolated process groups (`start_new_session=True`).
+   - Hard limits are applied on process creation: CPU time (`RLIMIT_CPU`: 120s), memory (`RLIMIT_AS`: 512MB), process count (`RLIMIT_NPROC`: 64), max file size (`RLIMIT_FSIZE`: 50MB), and open descriptors (`RLIMIT_NOFILE`: 256).
+   - If a command times out, the entire process group is terminated with `os.killpg(pid, SIGKILL)`.
+
+3. **Filesystem Boundary & Symlink Traversal Protection**:
+   - All workspace paths are resolved with `pathlib.Path.resolve()` and verified against `workspace_dir.relative_to(...)`.
+   - Symlinks inside the workspace pointing outside the temporary directory are rejected with `PermissionError`.
+   - Sensitive credential files (`.env`, `.pem`, `.key`, `.p12`) are blocked from workspace imports.
+
+4. **Command Allowlist & Flag Filtering**:
+   - Commands are parsed via `shlex.split` and executed without a shell (`shell=False`).
+   - Only pre-approved developer binaries (`python`, `pytest`, `node`, `npm`, `cargo`, `go`, etc.) can be called.
+   - Inline execution flags (`-c`, `-e`, `-p`, `--print`, `--eval`, and combined short flags like `-Sc`) are strictly rejected.
+   - Network servers (`python -m http.server`, `SimpleHTTPServer`) are blocked.
+   - Package managers (`pip`, `npm`, `yarn`) cannot install packages unless `ALLOW_PACKAGE_INSTALL=true`.
+
+5. **Namespace Isolation (`bwrap` / `unshare`)**:
+   - If `bwrap` or `unshare` is present and functional, commands run with read-only root mounts, isolated PID/network namespaces, and a temporary writable workspace.
+   - If namespace creation is unsupported by the host environment, a one-time degraded-isolation warning is logged.
 
 ---
 
