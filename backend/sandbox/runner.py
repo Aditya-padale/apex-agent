@@ -10,6 +10,9 @@ import resource
 import signal
 import logging
 from typing import Dict, Any, List, Optional, Tuple
+from dotenv import load_dotenv
+
+load_dotenv(pathlib.Path(__file__).resolve().parents[1] / ".env")
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +34,16 @@ ALLOWED_COMMANDS = {
 MAX_COMMAND_LENGTH = 800
 MAX_PROCESS_OUTPUT = 60_000
 
-# Environment flags
-ALLOW_CODE_EXECUTION = os.environ.get("ALLOW_CODE_EXECUTION", "false").lower() in ("true", "1", "yes")
-ALLOW_PACKAGE_INSTALL = os.environ.get("ALLOW_PACKAGE_INSTALL", "false").lower() in ("true", "1", "yes")
+# Dynamic environment checks
+def is_code_execution_allowed() -> bool:
+    return os.environ.get("ALLOW_CODE_EXECUTION", "false").lower() in ("true", "1", "yes")
+
+def is_package_install_allowed() -> bool:
+    return os.environ.get("ALLOW_PACKAGE_INSTALL", "false").lower() in ("true", "1", "yes")
+
+# Environment flags (for backwards compatibility)
+ALLOW_CODE_EXECUTION = is_code_execution_allowed()
+ALLOW_PACKAGE_INSTALL = is_package_install_allowed()
 
 # POSIX resource limits for child processes
 _RLIMIT_CPU = 120                  # CPU seconds

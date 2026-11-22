@@ -26,13 +26,18 @@ def test_api_root(client):
     assert res_api.json()["status"] == "ok"
 
 
-def test_health_check(client):
+def test_health_check(client, monkeypatch):
+    monkeypatch.setenv("ALLOW_CODE_EXECUTION", "false")
     res = client.get("/api/health")
     assert res.status_code == 200
     data = res.json()
     assert data["status"] == "ok"
     assert "ApexAgent" in data["service"]
     assert data["code_execution_enabled"] is False
+
+    monkeypatch.setenv("ALLOW_CODE_EXECUTION", "true")
+    res_true = client.get("/api/health")
+    assert res_true.json()["code_execution_enabled"] is True
 
 
 def test_list_scenarios(client):
@@ -56,8 +61,9 @@ def test_run_agent_validation_error(client):
     assert res.status_code == 422
 
 
-def test_run_agent_user_code_blocked_by_default(client):
-    # ALLOW_CODE_EXECUTION is false by default, so custom workspaces return 403
+def test_run_agent_user_code_blocked_by_default(client, monkeypatch):
+    # When ALLOW_CODE_EXECUTION is false, custom workspaces return 403
+    monkeypatch.setenv("ALLOW_CODE_EXECUTION", "false")
     payload = {
         "workspace_files": {"main.py": "print('hello')"},
         "custom_prompt": "Run this file",
@@ -67,14 +73,26 @@ def test_run_agent_user_code_blocked_by_default(client):
     assert "disabled on this server" in res.json()["detail"]
 
 
-def test_test_sandbox_blocked_by_default(client):
-    # ALLOW_CODE_EXECUTION is false by default, so /api/test-sandbox returns 403
+def test_test_sandbox_blocked_by_default(client, monkeypatch):
+    # When ALLOW_CODE_EXECUTION is false, /api/test-sandbox returns 403
+    monkeypatch.setenv("ALLOW_CODE_EXECUTION", "false")
     payload = {
         "workspace_files": {"main.py": "print('hello')"},
     }
     res = client.post("/api/test-sandbox", json=payload)
     assert res.status_code == 403
     assert "disabled on this server" in res.json()["detail"]
+
+
+def test_test_sandbox_allowed_when_enabled(client, monkeypatch):
+    monkeypatch.setenv("ALLOW_CODE_EXECUTION", "true")
+    payload = {
+        "workspace_files": {"main.py": "print('hello world')"},
+        "command": "python3 main.py",
+    }
+    res = client.post("/api/test-sandbox", json=payload)
+    assert res.status_code == 200
+    assert "hello world" in res.json()["sandbox_result"]["stdout"]
 
 
 def test_access_token_enforcement(client, monkeypatch):

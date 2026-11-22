@@ -3,8 +3,12 @@ import asyncio
 import os
 import time
 import re
-from pathlib import PurePosixPath
+from pathlib import PurePosixPath, Path
 from typing import Dict, Optional, List
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
 from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -12,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from scenarios.loader import SCENARIOS, get_scenario
 from agent.core import ApexAgentEngine, DEFAULT_MODEL
-from sandbox.runner import SandboxEnvironment, ALLOW_CODE_EXECUTION
+from sandbox.runner import SandboxEnvironment, ALLOW_CODE_EXECUTION, is_code_execution_allowed
 
 app = FastAPI(
     title="ApexAgent API",
@@ -146,7 +150,7 @@ def health_check():
     return {
         "status": "ok",
         "service": "ApexAgent Backend Core",
-        "code_execution_enabled": ALLOW_CODE_EXECUTION,
+        "code_execution_enabled": is_code_execution_allowed(),
     }
 
 @app.get("/api/scenarios")
@@ -181,7 +185,7 @@ async def run_agent_stream(
     )
 
     if req.workspace_files is not None:
-        if not ALLOW_CODE_EXECUTION:
+        if not is_code_execution_allowed():
             raise HTTPException(
                 status_code=403,
                 detail="Execution of user-supplied workspace code is disabled on this server. Set ALLOW_CODE_EXECUTION=true to enable it.",
@@ -238,7 +242,7 @@ async def test_sandbox(
     verify_access_token(x_access_token)
     check_rate_limit(request)
 
-    if not ALLOW_CODE_EXECUTION:
+    if not is_code_execution_allowed():
         raise HTTPException(
             status_code=403,
             detail="Execution of user-supplied workspace code is disabled on this server. Set ALLOW_CODE_EXECUTION=true to enable it.",
