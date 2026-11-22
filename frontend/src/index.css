@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 :root {
-  --neo-bg: #0c0d14;
-  --neo-card: #151624;
-  --neo-card-subtle: #1c1d30;
+  --neo-bg: #f8fafc;
+  --neo-card: #ffffff;
+  --neo-card-subtle: #f1f5f9;
   --neo-border: #000000;
   --neo-yellow: #ffe600;
   --neo-lime: #a3e635;
@@ -26,11 +26,11 @@
 body {
   background-color: var(--neo-bg);
   background-image: 
-    radial-gradient(rgba(255, 255, 255, 0.08) 1.5px, transparent 1.5px),
-    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 24px 24px, 48px 48px, 48px 48px;
-  color: #f8fafc;
+    radial-gradient(#000000 1.2px, transparent 1.2px),
+    linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  background-size: 20px 20px, 40px 40px, 40px 40px;
+  color: #0f172a;
   font-family: var(--font-sans);
   min-height: 100vh;
   line-height: 1.5;
@@ -38,20 +38,20 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Scrollbar - Neobrutalist style */
+/* Custom Scrollbar - Neobrutalist Light */
 ::-webkit-scrollbar {
   width: 7px;
   height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0c0d14;
-  border-left: 2px solid #000;
+  background: #f1f5f9;
+  border-left: 2px solid #000000;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #ffe600;
-  border: 2px solid #000;
+  border: 2px solid #000000;
   border-radius: 0px;
 }
 
@@ -64,14 +64,14 @@ body {
   background: var(--neo-card);
   border: 2px solid #000000;
   box-shadow: 4px 4px 0px #000000;
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .neo-panel-lg {
   background: var(--neo-card);
   border: 3px solid #000000;
   box-shadow: 6px 6px 0px #000000;
-  border-radius: 12px;
+  border-radius: 14px;
 }
 
 .neo-card {
@@ -85,7 +85,7 @@ body {
 .neo-btn {
   border: 2px solid #000000;
   box-shadow: 3px 3px 0px #000000;
-  font-weight: 700;
+  font-weight: 800;
   transition: all 0.12s cubic-bezier(0.2, 0, 0, 1);
   cursor: pointer;
 }
@@ -101,7 +101,7 @@ body {
 }
 
 .neo-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
   box-shadow: 2px 2px 0px #000000;
 }
@@ -118,22 +118,22 @@ body {
 .neo-badge-sm {
   border: 1.5px solid #000000;
   box-shadow: 1.5px 1.5px 0px #000000;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 /* Neobrutalist Inputs */
 .neo-input {
-  background: #0f101b;
+  background: #ffffff;
   border: 2px solid #000000;
   box-shadow: 2px 2px 0px #000000;
-  color: #f8fafc;
+  color: #0f172a;
   transition: all 0.12s ease;
 }
 
 .neo-input:focus {
   outline: none;
-  border-color: #ffe600;
-  box-shadow: 3px 3px 0px #ffe600;
+  border-color: #000000;
+  box-shadow: 4px 4px 0px #ffe600;
 }
 
 /* Neo brutalist pulse */

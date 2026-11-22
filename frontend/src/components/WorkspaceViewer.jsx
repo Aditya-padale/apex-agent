@@ -15,12 +15,12 @@ import {
 import { runSandboxTest } from '../api';
 
 function getFileIcon(fileName = '') {
-  if (fileName.endsWith('.py')) return <span className="text-[#FFE600] font-mono text-[10px] font-black">PY</span>;
-  if (fileName.endsWith('.js') || fileName.endsWith('.jsx')) return <span className="text-[#38BDF8] font-mono text-[10px] font-black">JS</span>;
-  if (fileName.endsWith('.ts') || fileName.endsWith('.tsx')) return <span className="text-[#A78BFA] font-mono text-[10px] font-black">TS</span>;
-  if (fileName.endsWith('.json')) return <span className="text-[#FB923C] font-mono text-[10px] font-black">JSON</span>;
-  if (fileName.endsWith('.md')) return <span className="text-[#FF3366] font-mono text-[10px] font-black">MD</span>;
-  return <FileCode className="w-3.5 h-3.5 text-slate-400 stroke-[2.5]" />;
+  if (fileName.endsWith('.py')) return <span className="text-black bg-[#FFE600] px-1 rounded border border-black font-mono text-[9px] font-black">PY</span>;
+  if (fileName.endsWith('.js') || fileName.endsWith('.jsx')) return <span className="text-black bg-[#38BDF8] px-1 rounded border border-black font-mono text-[9px] font-black">JS</span>;
+  if (fileName.endsWith('.ts') || fileName.endsWith('.tsx')) return <span className="text-black bg-[#A78BFA] px-1 rounded border border-black font-mono text-[9px] font-black">TS</span>;
+  if (fileName.endsWith('.json')) return <span className="text-black bg-[#FB923C] px-1 rounded border border-black font-mono text-[9px] font-black">JSON</span>;
+  if (fileName.endsWith('.md')) return <span className="text-white bg-[#FF3366] px-1 rounded border border-black font-mono text-[9px] font-black">MD</span>;
+  return <FileCode className="w-3.5 h-3.5 text-black stroke-[2.5]" />;
 }
 
 export default function WorkspaceViewer({
@@ -80,7 +80,7 @@ export default function WorkspaceViewer({
   const lines = currentContent.split('\n');
 
   return (
-    <div className="neo-panel p-4 flex flex-col h-full overflow-hidden">
+    <div className="neo-panel bg-white p-4 flex flex-col h-full overflow-hidden">
       {/* Header bar */}
       <div className="flex items-center justify-between border-b-2 border-black pb-2.5 mb-2.5 gap-2">
         <div className="flex items-center gap-2 min-w-0">
@@ -89,14 +89,14 @@ export default function WorkspaceViewer({
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h2 className="text-xs font-black uppercase tracking-wider text-white">WORKSPACE VIEWER</h2>
+              <h2 className="text-xs font-black uppercase tracking-wider text-black">WORKSPACE VIEWER</h2>
               <span className={`neo-badge-sm px-1.5 py-0.2 rounded text-[9px] font-mono ${
-                isEditable ? 'bg-[#FFE600] text-black' : 'bg-slate-300 text-black'
+                isEditable ? 'bg-[#FFE600] text-black' : 'bg-slate-200 text-black'
               }`}>
                 {isEditable ? 'EDITABLE' : 'BENCHMARK'}
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 font-mono">{fileNames.length} FILE{fileNames.length === 1 ? '' : 'S'} LOADED</p>
+            <p className="text-[10px] text-slate-600 font-mono font-bold">{fileNames.length} FILE{fileNames.length === 1 ? '' : 'S'} LOADED</p>
           </div>
         </div>
 
@@ -104,10 +104,10 @@ export default function WorkspaceViewer({
           {displayFileName && (
             <button
               onClick={handleCopyCode}
-              className="neo-btn bg-[#181928] text-white p-1.5 rounded-md text-xs"
+              className="neo-btn bg-white text-black p-1.5 rounded-md text-xs"
               title="Copy current file code"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-[#A3E635] stroke-[2.5]" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? <Check className="w-3.5 h-3.5 text-[#16a34a] stroke-[2.5]" /> : <Copy className="w-3.5 h-3.5 stroke-[2.5]" />}
             </button>
           )}
 
@@ -130,7 +130,7 @@ export default function WorkspaceViewer({
       {/* File Tabs */}
       <div className="flex items-center gap-1 mb-2.5 overflow-x-auto pb-1">
         {fileNames.length === 0 ? (
-          <div className="text-xs text-slate-500 font-mono italic py-1">No files in workspace</div>
+          <div className="text-xs text-slate-500 font-mono italic py-1 font-bold">No files in workspace</div>
         ) : (
           fileNames.map((fileName) => {
             const isActive = fileName === displayFileName;
@@ -141,7 +141,7 @@ export default function WorkspaceViewer({
                 className={`px-2.5 py-1 rounded-md text-xs font-mono transition-all border-2 border-black whitespace-nowrap flex items-center gap-1.5 ${
                   isActive
                     ? 'bg-[#FFE600] text-black font-black shadow-[2px_2px_0_0_#000] -translate-x-0.5 -translate-y-0.5'
-                    : 'bg-[#181928] text-slate-300 font-bold hover:bg-[#202138] shadow-[2px_2px_0_0_#000]'
+                    : 'bg-white text-slate-700 font-bold hover:bg-slate-100 shadow-[2px_2px_0_0_#000]'
                 }`}
               >
                 {getFileIcon(fileName)}
@@ -153,26 +153,26 @@ export default function WorkspaceViewer({
       </div>
 
       {/* Code Editor & Viewer */}
-      <div className="flex-1 bg-[#0c0d14] border-2 border-black rounded-lg overflow-hidden flex flex-col font-mono text-xs min-h-0 shadow-[3px_3px_0_0_#000]">
+      <div className="flex-1 bg-white border-2 border-black rounded-lg overflow-hidden flex flex-col font-mono text-xs min-h-0 shadow-[3px_3px_0_0_#000]">
         {/* File info banner */}
-        <div className="bg-[#181928] px-3 py-1.5 border-b-2 border-black text-[11px] text-white flex items-center justify-between">
+        <div className="bg-[#F8FAFC] px-3 py-1.5 border-b-2 border-black text-[11px] text-black flex items-center justify-between font-black">
           <div className="flex items-center gap-2 truncate">
-            <span className="font-black truncate">{displayFileName || 'NO FILE SELECTED'}</span>
+            <span className="truncate">{displayFileName || 'NO FILE SELECTED'}</span>
           </div>
           <div className="flex items-center gap-3 shrink-0 text-[10px] font-mono">
             {isEditable && (
-              <span className="flex items-center gap-1 text-[#38BDF8] font-bold">
+              <span className="flex items-center gap-1 text-[#0284c7] font-black">
                 <PencilLine className="w-3 h-3 stroke-[2.5]" /> AUTO-SAVED
               </span>
             )}
-            <span className="text-slate-400 font-bold">{lines.length} LINES</span>
+            <span className="text-slate-600 font-black">{lines.length} LINES</span>
           </div>
         </div>
 
         {/* Content area */}
         {isEditable && displayFileName ? (
           <div className="flex-1 flex overflow-hidden min-h-0 relative">
-            <div className="select-none py-3 pl-3 pr-2 bg-[#10111a] text-slate-500 font-mono text-[11px] text-right border-r-2 border-black overflow-hidden shrink-0">
+            <div className="select-none py-3 pl-3 pr-2 bg-[#F1F5F9] text-slate-500 font-mono text-[11px] font-bold text-right border-r-2 border-black overflow-hidden shrink-0">
               {lines.map((_, i) => (
                 <div key={i} className="leading-relaxed">{i + 1}</div>
               ))}
@@ -182,18 +182,18 @@ export default function WorkspaceViewer({
               value={currentContent}
               onChange={(event) => onFileChange?.(displayFileName, event.target.value)}
               spellCheck="false"
-              className="flex-1 w-full min-h-0 resize-none bg-[#0c0d14] p-3 leading-relaxed text-slate-100 text-[11px] font-mono focus:outline-none overflow-auto"
+              className="flex-1 w-full min-h-0 resize-none bg-white p-3 leading-relaxed text-black text-[11px] font-mono font-bold focus:outline-none overflow-auto"
               aria-label={`Edit ${displayFileName}`}
             />
           </div>
         ) : (
-          <div className="flex-1 overflow-auto p-3 leading-relaxed text-slate-200">
+          <div className="flex-1 overflow-auto p-3 leading-relaxed text-black font-mono font-bold">
             <table className="w-full border-collapse">
               <tbody>
                 {lines.map((line, index) => (
-                  <tr key={index} className="hover:bg-[#181928]">
-                    <td className="w-8 select-none text-right pr-3 text-slate-500 font-mono text-[11px] border-r border-slate-800">{index + 1}</td>
-                    <td className="whitespace-pre font-mono text-[11px] text-slate-200 pl-3">{line}</td>
+                  <tr key={index} className="hover:bg-slate-100">
+                    <td className="w-8 select-none text-right pr-3 text-slate-500 font-mono text-[11px] border-r-2 border-slate-300 font-bold">{index + 1}</td>
+                    <td className="whitespace-pre font-mono text-[11px] text-black pl-3">{line}</td>
                   </tr>
                 ))}
               </tbody>
@@ -204,14 +204,14 @@ export default function WorkspaceViewer({
 
       {/* Terminal Sandbox Result Drawer */}
       {sandboxResult && (
-        <div className="mt-2.5 bg-[#0c0d14] border-2 border-black rounded-lg overflow-hidden shadow-[4px_4px_0_0_#000]">
+        <div className="mt-2.5 bg-white border-2 border-black rounded-lg overflow-hidden shadow-[4px_4px_0_0_#000]">
           <div
             onClick={() => setShowConsole(!showConsole)}
-            className="px-3 py-1.5 bg-[#181928] border-b-2 border-black flex items-center justify-between cursor-pointer hover:bg-[#202138] transition-colors"
+            className="px-3 py-1.5 bg-[#F8FAFC] border-b-2 border-black flex items-center justify-between cursor-pointer hover:bg-slate-200 transition-colors"
           >
             <div className="flex items-center gap-2">
-              <Terminal className="w-3.5 h-3.5 text-[#A3E635] stroke-[2.5]" />
-              <span className="text-[11px] font-black uppercase text-white">VALIDATION CONSOLE OUTPUT</span>
+              <Terminal className="w-3.5 h-3.5 text-black stroke-[2.5]" />
+              <span className="text-[11px] font-black uppercase text-black">VALIDATION CONSOLE OUTPUT</span>
             </div>
             <div className="flex items-center gap-2">
               <span className={`neo-badge-sm px-2 py-0.5 rounded text-[10px] font-mono ${
@@ -219,26 +219,26 @@ export default function WorkspaceViewer({
               }`}>
                 {sandboxResult.exit_code === 0 ? 'PASS (EXIT 0)' : `FAIL (EXIT ${sandboxResult.exit_code ?? 1})`}
               </span>
-              {showConsole ? <ChevronUp className="w-3.5 h-3.5 text-white" /> : <ChevronDown className="w-3.5 h-3.5 text-white" />}
+              {showConsole ? <ChevronUp className="w-3.5 h-3.5 text-black stroke-[2.5]" /> : <ChevronDown className="w-3.5 h-3.5 text-black stroke-[2.5]" />}
             </div>
           </div>
 
           {showConsole && (
             <div className="p-3 space-y-1.5 max-h-48 overflow-y-auto text-[11px] font-mono">
               {sandboxResult.command && (
-                <div className="text-[10px] font-mono text-[#38BDF8] bg-[#10111a] p-1.5 rounded border border-black break-all font-bold">
+                <div className="text-[10px] font-mono text-black bg-[#FEF08A] p-1.5 rounded border border-black break-all font-black">
                   $ {sandboxResult.command}
                 </div>
               )}
               {sandboxResult.stdout && (
-                <pre className="text-[#A3E635] whitespace-pre-wrap">{sandboxResult.stdout}</pre>
+                <pre className="text-emerald-950 bg-[#F0FDF4] p-2 rounded border border-black whitespace-pre-wrap font-bold">{sandboxResult.stdout}</pre>
               )}
               {sandboxResult.stderr && (
-                <pre className="text-[#FF8099] whitespace-pre-wrap">{sandboxResult.stderr}</pre>
+                <pre className="text-rose-950 bg-[#FEF2F2] p-2 rounded border border-black whitespace-pre-wrap font-bold">{sandboxResult.stderr}</pre>
               )}
               {sandboxResult.error && (
-                <div className="text-[#FF3366] flex items-center gap-1.5 font-bold">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <div className="text-rose-950 bg-[#FEF2F2] p-2 rounded border border-black flex items-center gap-1.5 font-black">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 stroke-[2.5]" />
                   <span>{sandboxResult.error}</span>
                 </div>
               )}

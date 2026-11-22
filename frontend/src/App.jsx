@@ -196,7 +196,7 @@ export default function App() {
   const isCustomWorkspace = workspaceMode === 'custom';
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#0c0d14] text-slate-100 font-sans">
+    <div className="flex flex-col h-screen overflow-hidden bg-[#F8FAFC] text-slate-900 font-sans">
       <Header
         status={status}
         runSucceeded={runSucceeded}
@@ -211,14 +211,14 @@ export default function App() {
         {/* Left Column: My Project / Demo Scenarios */}
         <div className="col-span-12 lg:col-span-3 h-full overflow-hidden flex flex-col gap-2">
           {/* Neobrutalist Segmented Control: 'My project' FIRST, then 'Demo scenarios' */}
-          <div className="grid grid-cols-2 rounded-lg bg-[#0c0d14] border-2 border-black p-1 shrink-0 shadow-[3px_3px_0px_0px_#000]">
+          <div className="grid grid-cols-2 rounded-lg bg-white border-2 border-black p-1 shrink-0 shadow-[3px_3px_0px_0px_#000]">
             <button
               onClick={() => handleModeChange('custom')}
               disabled={status === 'running'}
               className={`py-1.5 px-3 rounded-md text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 ${
                 isCustomWorkspace
                   ? 'bg-[#FFE600] text-black border-2 border-black shadow-[2px_2px_0px_0px_#000]'
-                  : 'text-slate-400 hover:text-white hover:bg-[#1c1d30]'
+                  : 'text-slate-600 hover:text-black hover:bg-slate-100'
               }`}
             >
               <FolderGit2 className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -230,7 +230,7 @@ export default function App() {
               className={`py-1.5 px-3 rounded-md text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 ${
                 !isCustomWorkspace
                   ? 'bg-[#38BDF8] text-black border-2 border-black shadow-[2px_2px_0px_0px_#000]'
-                  : 'text-slate-400 hover:text-white hover:bg-[#1c1d30]'
+                  : 'text-slate-600 hover:text-black hover:bg-slate-100'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5 stroke-[2.5]" />

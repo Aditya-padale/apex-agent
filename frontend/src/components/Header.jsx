@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, Key, Cpu, AlertCircle, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
+import { Zap, Cpu, AlertCircle, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 
 export default function Header({
   status,
@@ -11,7 +11,7 @@ export default function Header({
   workspaceMode,
 }) {
   return (
-    <header className="border-b-2 border-black bg-[#151624] px-5 py-2.5 flex items-center justify-between sticky top-0 z-40 shadow-[0_3px_0_0_#000]">
+    <header className="border-b-2 border-black bg-white px-5 py-2.5 flex items-center justify-between sticky top-0 z-40 shadow-[0_3px_0_0_#000]">
       {/* Brand & Logo */}
       <div className="flex items-center space-x-3">
         <div className="w-9 h-9 rounded-lg bg-[#FFE600] border-2 border-black shadow-[3px_3px_0_0_#000] flex items-center justify-center">
@@ -19,7 +19,7 @@ export default function Header({
         </div>
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="font-black text-lg tracking-tight text-white uppercase">ApexAgent</h1>
+            <h1 className="font-black text-lg tracking-tight text-black uppercase">ApexAgent</h1>
             <span className="neo-badge-sm bg-[#A3E635] text-black px-2 py-0.5 rounded text-[10px] font-mono">
               v1.0 ReAct
             </span>
@@ -27,15 +27,15 @@ export default function Header({
               {workspaceMode === 'custom' ? 'My Project' : 'Benchmark'}
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 font-medium">Autonomous Coding & Verification Engine</p>
+          <p className="text-[11px] text-slate-600 font-semibold">Autonomous Coding & Verification Engine</p>
         </div>
       </div>
 
       {/* Middle Status Indicator */}
       <div className="hidden md:flex items-center space-x-2">
         {status === 'idle' && (
-          <div className="neo-badge bg-[#1c1d30] text-slate-300 px-3 py-1 rounded-md text-xs font-mono flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-slate-400" />
+          <div className="neo-badge bg-[#f1f5f9] text-black px-3 py-1 rounded-md text-xs font-mono flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-slate-500 border border-black" />
             <span>SYSTEM READY</span>
           </div>
         )}
@@ -68,21 +68,21 @@ export default function Header({
       {/* Right Controls: Model & API Key */}
       <div className="flex items-center space-x-2.5">
         {/* Model Selector */}
-        <div className="flex items-center space-x-1.5 bg-[#0f101b] border-2 border-black shadow-[2px_2px_0_0_#000] rounded-md px-2.5 py-1 text-xs">
-          <Cpu className="w-3.5 h-3.5 text-[#38BDF8]" />
+        <div className="flex items-center space-x-1.5 bg-white border-2 border-black shadow-[2px_2px_0_0_#000] rounded-md px-2.5 py-1 text-xs">
+          <Cpu className="w-3.5 h-3.5 text-[#0284c7] stroke-[2.5]" />
           <select
             value={modelName}
             onChange={(e) => setModelName(e.target.value)}
             disabled={status === 'running'}
-            className="bg-transparent text-white font-mono text-[11px] font-bold focus:outline-none cursor-pointer disabled:opacity-50"
+            className="bg-transparent text-black font-mono text-[11px] font-bold focus:outline-none cursor-pointer disabled:opacity-50"
           >
-            <option value="openai/gpt-oss-20b" className="bg-[#151624] text-white">
+            <option value="openai/gpt-oss-20b" className="bg-white text-black">
               openai/gpt-oss-20b
             </option>
-            <option value="openai/gpt-oss-120b" className="bg-[#151624] text-white">
+            <option value="openai/gpt-oss-120b" className="bg-white text-black">
               openai/gpt-oss-120b
             </option>
-            <option value="qwen/qwen3.8-27b" className="bg-[#151624] text-white">
+            <option value="qwen/qwen3.8-27b" className="bg-white text-black">
               qwen/qwen3.8-27b
             </option>
           </select>

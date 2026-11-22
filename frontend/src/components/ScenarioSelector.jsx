@@ -14,11 +14,10 @@ export default function ScenarioSelector({
 }) {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const getCategoryIcon = (category = '', isSelected = false) => {
-    const iconClass = isSelected ? 'text-black' : 'text-[#38BDF8]';
-    if (category.includes('Algorithmic')) return <Bug className={`w-3.5 h-3.5 stroke-[2.5] ${iconClass}`} />;
-    if (category.includes('Pipeline')) return <Layers className={`w-3.5 h-3.5 stroke-[2.5] ${iconClass}`} />;
-    return <Code className={`w-3.5 h-3.5 stroke-[2.5] ${iconClass}`} />;
+  const getCategoryIcon = (category = '') => {
+    if (category.includes('Algorithmic')) return <Bug className="w-3.5 h-3.5 stroke-[2.5] text-black" />;
+    if (category.includes('Pipeline')) return <Layers className="w-3.5 h-3.5 stroke-[2.5] text-black" />;
+    return <Code className="w-3.5 h-3.5 stroke-[2.5] text-black" />;
   };
 
   const getDifficultyBadge = (difficulty) => {
@@ -30,7 +29,7 @@ export default function ScenarioSelector({
       case 'Hard':
         return 'bg-[#FF3366] text-white';
       default:
-        return 'bg-slate-300 text-black';
+        return 'bg-slate-200 text-black';
     }
   };
 
@@ -45,43 +44,43 @@ export default function ScenarioSelector({
   });
 
   return (
-    <div className="neo-panel p-4 flex flex-col h-full gap-3 overflow-hidden">
+    <div className="neo-panel bg-white p-4 flex flex-col h-full gap-3 overflow-hidden">
       {/* Header */}
       <div>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#38BDF8] stroke-[2.5]" />
-            <h2 className="text-xs font-black uppercase tracking-wider text-white">BENCHMARK SCENARIOS</h2>
+            <Sparkles className="w-4 h-4 text-black stroke-[2.5]" />
+            <h2 className="text-xs font-black uppercase tracking-wider text-black">BENCHMARK SCENARIOS</h2>
           </div>
           <span className="neo-badge-sm bg-[#38BDF8] text-black px-2 py-0.5 rounded text-[10px] font-mono">
             {scenarios.length} READY
           </span>
         </div>
-        <p className="text-[11px] text-slate-400 font-medium">
+        <p className="text-[11px] text-slate-600 font-semibold">
           Select a verified scenario to debug & fix in the ReAct sandbox.
         </p>
       </div>
 
       {/* Search Input */}
       <div className="relative">
-        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+        <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5 stroke-[2.5]" />
         <input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Filter scenarios by keyword..."
-          className="w-full neo-input rounded-md pl-8 pr-3 py-1.5 text-xs font-mono"
+          className="w-full neo-input rounded-md pl-8 pr-3 py-1.5 text-xs font-mono font-bold"
         />
       </div>
 
       {/* Scenario Card List */}
       <div className="flex-1 overflow-y-auto space-y-2 pr-1">
         {loadingScenarios ? (
-          <div className="flex flex-col items-center justify-center py-12 text-slate-400 text-xs gap-2 font-mono">
-            <RefreshCw className="w-5 h-5 animate-spin text-[#FFE600]" />
+          <div className="flex flex-col items-center justify-center py-12 text-slate-600 text-xs gap-2 font-mono font-bold">
+            <RefreshCw className="w-5 h-5 animate-spin text-black" />
             <span>LOADING SCENARIOS...</span>
           </div>
         ) : filteredScenarios.length === 0 ? (
-          <div className="text-center py-8 text-xs text-slate-500 font-mono">
+          <div className="text-center py-8 text-xs text-slate-500 font-mono font-bold">
             No scenarios found for "{searchQuery}"
           </div>
         ) : (
@@ -99,13 +98,13 @@ export default function ScenarioSelector({
                 className={`p-3 rounded-lg transition-all duration-150 cursor-pointer border-2 border-black ${
                   isSelected
                     ? 'bg-[#FFE600] text-black shadow-[4px_4px_0px_0px_#000] -translate-x-0.5 -translate-y-0.5'
-                    : 'bg-[#181928] text-white shadow-[3px_3px_0px_0px_#000] hover:bg-[#202138] hover:translate-x-[-1px] hover:translate-y-[-1px]'
+                    : 'bg-white text-black shadow-[3px_3px_0px_0px_#000] hover:bg-[#F8FAFC] hover:translate-x-[-1px] hover:translate-y-[-1px]'
                 } ${status === 'running' ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    {getCategoryIcon(sc.category, isSelected)}
-                    <h3 className={`text-xs font-black truncate uppercase ${isSelected ? 'text-black' : 'text-white'}`}>
+                    {getCategoryIcon(sc.category)}
+                    <h3 className="text-xs font-black truncate uppercase text-black">
                       {sc.title}
                     </h3>
                   </div>
@@ -117,16 +116,16 @@ export default function ScenarioSelector({
                     {sc.difficulty}
                   </span>
                 </div>
-                <p className={`text-[11px] line-clamp-2 leading-relaxed mb-2 font-medium ${isSelected ? 'text-slate-900' : 'text-slate-400'}`}>
+                <p className="text-[11px] line-clamp-2 leading-relaxed mb-2 font-medium text-slate-800">
                   {sc.description}
                 </p>
                 <div className="flex items-center justify-between font-mono text-[10px]">
-                  <span className={`px-1.5 py-0.5 rounded border border-black font-bold text-[9px] ${
-                    isSelected ? 'bg-black text-white' : 'bg-[#0f101b] text-slate-300'
+                  <span className={`px-1.5 py-0.5 rounded border border-black font-black text-[9px] ${
+                    isSelected ? 'bg-black text-white' : 'bg-slate-100 text-black'
                   }`}>
                     {sc.category}
                   </span>
-                  <span className={isSelected ? 'text-slate-900 font-bold' : 'text-slate-500 font-bold'}>
+                  <span className="text-slate-700 font-black">
                     {fileCount} {fileCount === 1 ? 'FILE' : 'FILES'}
                   </span>
                 </div>
@@ -138,8 +137,8 @@ export default function ScenarioSelector({
 
       {/* Custom Prompt Override */}
       <div className="space-y-1 pt-2 border-t-2 border-black">
-        <label className="text-[11px] font-bold text-white uppercase flex items-center gap-1.5">
-          <MessageSquare className="w-3 h-3 text-[#38BDF8]" />
+        <label className="text-[11px] font-black text-black uppercase flex items-center gap-1.5">
+          <MessageSquare className="w-3 h-3 text-[#0284c7] stroke-[2.5]" />
           CUSTOM INSTRUCTIONS (OVERRIDE)
         </label>
         <textarea
@@ -148,7 +147,7 @@ export default function ScenarioSelector({
           onChange={(e) => setCustomPrompt(e.target.value)}
           disabled={status === 'running'}
           placeholder="Override default scenario instructions..."
-          className="w-full neo-input rounded-md p-2 text-xs font-mono resize-none disabled:opacity-50"
+          className="w-full neo-input rounded-md p-2 text-xs font-mono font-medium resize-none disabled:opacity-50"
         />
       </div>
 
