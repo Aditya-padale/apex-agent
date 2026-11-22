@@ -164,7 +164,7 @@ async def run_agent_stream(
     check_rate_limit(request)
 
     # API key accepted strictly via X-API-Key header (or server-side env)
-    effective_api_key = x_api_key or os.environ.get("GEMINI_API_KEY")
+    effective_api_key = x_api_key or os.environ.get("GROQ_API_KEY") or os.environ.get("GEMINI_API_KEY")
 
     engine = ApexAgentEngine(
         api_key=effective_api_key,

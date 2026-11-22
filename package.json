@@ -2,7 +2,7 @@
   "name": "apex-agent",
   "version": "1.0.0",
   "private": true,
-  "description": "Autonomous Agentic Coding & Debugging Platform powered by gemini-2.5-flash",
+  "description": "Autonomous Agentic Coding & Debugging Platform powered by Groq (openai/gpt-oss-20b)",
   "scripts": {
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "uvicorn backend.main:app --reload --port 8000",
@@ -16,7 +16,8 @@
     "react",
     "vercel",
     "serverless",
-    "gemini"
+    "groq",
+    "gpt-oss"
   ],
   "author": "Aditya Padale",
   "license": "MIT"

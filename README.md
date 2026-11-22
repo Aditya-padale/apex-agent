@@ -3,7 +3,7 @@
 <div align="center">
 
 [![Vercel Deployment](https://img.shields.io/badge/Vercel-Serverless_Ready-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com)
-[![Gemini Powered](https://img.shields.io/badge/Powered_by-Gemini_2.5_Flash-8E75FF?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+[![Groq Powered](https://img.shields.io/badge/Powered_by-Groq_API-f55036?style=for-the-badge&logo=fastapi&logoColor=white)](https://groq.com/)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI_Python_3.11-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![React + Vite](https://img.shields.io/badge/Frontend-React_18_+_Vite-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://vitejs.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
@@ -25,7 +25,7 @@ Traditional AI coding assistants suggest raw snippets, leaving developers to man
 ```
 ┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
 │   Agent Thought │ ───► │    Tool Call    │ ───► │ Sandbox Execution│ ───► │ Self-Correction │
-│ (Gemini 2.5 Flash)│      │  (Read/Write)   │      │ (Pytest/Run)    │      │  & Verification │
+│(openai/gpt-oss) │      │  (Read/Write)   │      │ (Pytest/Run)    │      │  & Verification │
 └─────────────────┘      └─────────────────┘      └─────────────────┘      └─────────────────┘
 ```
 
@@ -38,14 +38,14 @@ Traditional AI coding assistants suggest raw snippets, leaving developers to man
 
 ## ✨ Key Features
 
-- 🧠 **Gemini 2.5 Flash Engine**: Leverages Google's `gemini-2.5-flash` model for multi-turn code reasoning and function calling.
+- ⚡ **Groq LPU Engine**: Leverages high-speed Groq inference with the `openai/gpt-oss-20b` model for deep multi-turn code reasoning and function calling.
 - ⚡ **Serverless-Native Architecture**: Fully configured for 1-click deployment on **Vercel** with a unified monorepo structure (FastAPI Python Serverless Functions + React SPA).
 - 📡 **Real-Time Event Streaming (SSE)**: Streams step-by-step agent trajectories, tool invocations, stdout logs, and status updates directly to the UI.
 - 🧪 **Isolated Execution Sandbox**: Safely run Python scripts, unit test suites (pytest), search code patterns, and modify workspace files.
 - 🎯 **Benchmark Scenarios**: Built-in debugging benchmarks ranging from algorithmic edge cases (Binary Search) to corrupted log processing pipelines and async HTTP backoff retries.
-- 🎬 **Scripted Demo (no API key)**: Without an API key, the platform replays a pre-written fix for built-in scenarios while running real pytest in the sandbox. Add a Gemini API key to activate the live autonomous agent.
+- 🎬 **Scripted Demo (no API key)**: Without an API key, the platform replays a pre-written fix for built-in scenarios while running real pytest in the sandbox. Add a Groq API key to activate the live autonomous agent.
 - 📂 **Custom Workspace Importer**: Upload and debug your own multi-file Python projects directly inside the web interface.
-- 🔐 **Secure & Flexible API Keys**: Bring your own `GEMINI_API_KEY` via `X-API-Key` HTTP headers or use backend environment variables securely. Keys are never logged or echoed.
+- 🔐 **Secure & Flexible API Keys**: Bring your own `GROQ_API_KEY` via `X-API-Key` HTTP headers or use backend environment variables securely. Keys are never logged or echoed.
 
 ---
 
@@ -72,8 +72,8 @@ flowchart TD
         SCENARIOS["Benchmark Scenarios Loader"]
     end
 
-    subgraph Gemini ["Google AI Studio"]
-        LLM["Gemini 2.5 Flash (Async Client aio.models)"]
+    subgraph Groq ["Groq Cloud Inference"]
+        LLM["openai/gpt-oss-20b (AsyncGroq Client)"]
     end
 
     UI -->|1. Run scenario or custom workspace| API_CLIENT
@@ -96,7 +96,7 @@ apex-agent/
 │   └── index.py             # Serverless bridge for Vercel Python Functions
 ├── backend/
 │   ├── agent/               # Autonomous ReAct Agent core & tool definitions
-│   │   ├── core.py          # ApexAgentEngine (Gemini client & event stream)
+│   │   ├── core.py          # ApexAgentEngine (Groq client & event stream)
 │   │   └── tools.py         # Agent tool schema & function execution
 │   ├── sandbox/             # Subprocess sandbox & isolated runner
 │   │   └── runner.py        # SandboxEnvironment for code & test execution
@@ -125,12 +125,12 @@ Deploy Apex Agent to Vercel in less than 2 minutes:
 
 ### Option A: 1-Click Deployment (Recommended)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FAditya-padale%2Fapex-agent&env=GEMINI_API_KEY)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FAditya-padale%2Fapex-agent&env=GROQ_API_KEY)
 
 1. Click the **Deploy with Vercel** button above.
 2. Link your GitHub repository.
 3. In the **Environment Variables** section, configure:
-   - `GEMINI_API_KEY`: Your Google Gemini API Key ([Get an API key here](https://aistudio.google.com/app/apikey)).
+   - `GROQ_API_KEY`: Your Groq API Key ([Get an API key here](https://console.groq.com/keys)).
 4. Click **Deploy**. Vercel will build the frontend and deploy the Python serverless API functions automatically!
 
 ### Option B: Deploy via Vercel CLI
@@ -147,7 +147,7 @@ vercel --prod
 ```
 
 > [!NOTE]
-> Ensure you add your `GEMINI_API_KEY` in the Vercel Dashboard under **Project Settings > Environment Variables**.
+> Ensure you add your `GROQ_API_KEY` in the Vercel Dashboard under **Project Settings > Environment Variables**.
 
 > [!WARNING]
 > **Serverless Limitations**: Vercel Serverless Functions have a maximum execution duration (configured to `maxDuration: 60` seconds in `vercel.json`). Long agent trajectories, large test suites, and subprocess-heavy tasks are a poor fit for serverless functions due to cold starts, execution timeouts, and ephemeral container filesystems. For production workloads with multi-turn ReAct loops, deploy the backend as a persistent service (see below).
@@ -162,7 +162,7 @@ To run without serverless timeout constraints, deploy the backend container on a
    ```bash
    docker build -t apex-agent-backend .
    docker run -p 8000:8000 \
-     -e GEMINI_API_KEY="your_key" \
+     -e GROQ_API_KEY="your_key" \
      -e ALLOW_CODE_EXECUTION="false" \
      -e CORS_ORIGINS="https://your-frontend.vercel.app" \
      apex-agent-backend
@@ -184,7 +184,7 @@ To run without serverless timeout constraints, deploy the backend container on a
 
 - **Python**: `3.11`
 - **Node.js**: `18.0` or higher
-- **Gemini API Key**: From [Google AI Studio](https://aistudio.google.com/)
+- **Groq API Key**: From [Groq Console](https://console.groq.com/keys)
 
 ### 1. Clone Repository
 
@@ -205,7 +205,7 @@ cp backend/.env.example backend/.env
 
 | Variable | Default | Description |
 | :--- | :--- | :--- |
-| `GEMINI_API_KEY` | *(None)* | Google Gemini API key. Required for autonomous tool use and live fixes. Can also be supplied per-request via `X-API-Key` header. |
+| `GROQ_API_KEY` | *(None)* | Groq API key. Required for autonomous tool use and live fixes. Can also be supplied per-request via `X-API-Key` header. |
 | `ALLOW_CODE_EXECUTION` | `false` | When `false`, endpoints running user-imported workspace code return HTTP 403 Forbidden. Keep `false` on public deployments. |
 | `ALLOW_PACKAGE_INSTALL` | `false` | When `false`, blocks `pip install`, `npm install`, and `yarn add` commands inside the sandbox. |
 | `CORS_ORIGINS` | `http://localhost:5173` | Comma-separated list of allowed web origins for CORS headers (`allow_credentials=False`). |
@@ -262,7 +262,7 @@ The 33 automated tests cover:
 - **Sandbox Security & Flags**: Allowed compiler/runtime commands, blocked inline code execution flags (`-c`, `-e`, `-p`, `--print`, `--eval`), combined short flags (`-Sc`), network servers (`-m http.server`), package installs, and symlinks pointing outside the workspace.
 - **Benchmark Scenarios**: Scenario metadata integrity, loader resolution, and fallback handling.
 - **FastAPI Endpoints**: Health checks, scenario listings, 403 responses when `ALLOW_CODE_EXECUTION=false`, and `X-Access-Token` auth gating.
-- **Autonomous Agent Loop**: Simulated ReAct loop with fake Gemini async client verifying event ordering (`agent_start` → `thought` → `tool_call` → `observation` → `finished`), turn limits, and wall-clock timeout budgets.
+- **Autonomous Agent Loop**: Simulated ReAct loop with fake Groq async client verifying event ordering (`agent_start` → `thought` → `tool_call` → `observation` → `finished`), turn limits, and wall-clock timeout budgets.
 
 #### Frontend Build & Type Check
 
@@ -295,7 +295,7 @@ Example JSON request body:
   "scenario_id": "scenario_1_binary_search",
   "project_name": "Binary Search Debugging",
   "custom_prompt": "Fix the IndexError and edge case bug in binary_search.py",
-  "model_name": "gemini-2.5-flash",
+  "model_name": "openai/gpt-oss-20b",
   "max_turns": 12
 }
 ```

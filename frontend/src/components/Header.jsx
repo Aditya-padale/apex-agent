@@ -74,11 +74,14 @@ export default function Header({
             disabled={status === 'running'}
             className="bg-transparent text-slate-200 font-mono focus:outline-none cursor-pointer disabled:opacity-50"
           >
-            <option value="gemini-2.5-flash" className="bg-slate-900 text-slate-200">
-              gemini-2.5-flash
+            <option value="openai/gpt-oss-20b" className="bg-slate-900 text-slate-200">
+              openai/gpt-oss-20b
             </option>
-            <option value="gemini-2.5-pro" className="bg-slate-900 text-slate-200">
-              gemini-2.5-pro
+            <option value="openai/gpt-oss-120b" className="bg-slate-900 text-slate-200">
+              openai/gpt-oss-120b
+            </option>
+            <option value="qwen/qwen3.8-27b" className="bg-slate-900 text-slate-200">
+              qwen/qwen3.8-27b
             </option>
           </select>
         </div>

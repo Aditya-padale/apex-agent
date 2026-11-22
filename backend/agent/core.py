@@ -6,11 +6,10 @@ import logging
 from pathlib import Path
 from typing import AsyncGenerator, Dict, Any, List, Optional
 from dotenv import load_dotenv
-from google import genai
-from google.genai import types
+from groq import AsyncGroq
 
 from sandbox.runner import SandboxEnvironment
-from agent.tools import GEMINI_TOOLS_DECLARATION, ToolDispatcher
+from agent.tools import GROQ_TOOLS, ToolDispatcher
 from scenarios.loader import get_scenario
 
 logger = logging.getLogger(__name__)
@@ -40,12 +39,12 @@ WORKSPACE PROTOCOL:
 
 You must be relentless in making tests pass cleanly. Never give up on a traceback!"""
 
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_MODEL = "openai/gpt-oss-20b"
 
 # Hard per-run wall-clock budget in seconds, configurable via env.
 MAX_RUN_SECONDS = int(os.environ.get("MAX_RUN_SECONDS", "150"))
 
-# Retry config for transient Gemini API errors (429 / 5xx)
+# Retry config for transient API errors (429 / 5xx)
 _MAX_API_RETRIES = 2
 _RETRY_BASE_DELAY = 2.0
 
@@ -53,23 +52,22 @@ _RETRY_BASE_DELAY = 2.0
 def _is_transient_error(exc: Exception) -> bool:
     """Return True for 429 / 5xx errors that are worth retrying."""
     msg = str(exc).lower()
-    # google-genai raises errors whose repr/str include the HTTP status
     for code in ("429", "500", "502", "503", "504"):
         if code in msg:
             return True
-    if "resource exhausted" in msg or "internal" in msg or "unavailable" in msg:
+    if "rate limit" in msg or "internal" in msg or "unavailable" in msg or "overloaded" in msg:
         return True
     return False
 
 
 class ApexAgentEngine:
     """
-    Manages the ReAct execution loop, Gemini API communication, sandbox tool execution,
+    Manages the ReAct execution loop, Groq API communication, sandbox tool execution,
     traceback self-correction, and streaming trajectory events.
     """
     def __init__(self, api_key: Optional[str] = None, model_name: str = DEFAULT_MODEL):
-        self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
-        self.model_name = model_name
+        self.api_key = api_key or os.environ.get("GROQ_API_KEY") or os.environ.get("GEMINI_API_KEY")
+        self.model_name = model_name or DEFAULT_MODEL
 
     # ------------------------------------------------------------------
     # Private: shared ReAct loop used by both run_scenario and run_workspace
@@ -77,19 +75,14 @@ class ApexAgentEngine:
     async def _react_loop(
         self,
         sandbox: SandboxEnvironment,
-        client: genai.Client,
-        contents: List[Any],
-        config: types.GenerateContentConfig,
+        client: AsyncGroq,
+        messages: List[Dict[str, Any]],
         max_turns: int,
         *,
         require_verified_run: bool = False,
         no_tool_nudge: str = "Please execute a tool call (e.g., read_file, run_pytest, write_file, or finish_task).",
     ) -> AsyncGenerator[Dict[str, Any], None]:
-        """Core ReAct loop that yields SSE event dicts.
-
-        Both ``run_scenario`` and ``run_workspace`` call this after their own
-        setup (populating files, building the initial prompt, etc.).
-        """
+        """Core ReAct loop that yields SSE event dicts."""
         dispatcher = ToolDispatcher(sandbox)
         turn = 0
         task_completed = False
@@ -113,62 +106,69 @@ class ApexAgentEngine:
             turn += 1
             yield {"event": "step_start", "data": {"step": turn, "max_turns": max_turns}}
 
-            # --- Gemini API call with retry on transient errors ---
+            # --- Groq API call with retry on transient errors ---
             response = None
             last_api_error: Optional[Exception] = None
             for attempt in range(_MAX_API_RETRIES + 1):
                 try:
-                    response = await client.aio.models.generate_content(
+                    response = await client.chat.completions.create(
                         model=self.model_name,
-                        contents=contents,
-                        config=config,
+                        messages=messages,
+                        tools=GROQ_TOOLS,
+                        temperature=0.2,
                     )
                     break
                 except Exception as api_err:
                     last_api_error = api_err
                     if _is_transient_error(api_err) and attempt < _MAX_API_RETRIES:
                         delay = _RETRY_BASE_DELAY * (2 ** attempt)
-                        logger.warning("Transient Gemini API error (attempt %d): %s — retrying in %.1fs", attempt + 1, api_err, delay)
+                        logger.warning("Transient Groq API error (attempt %d): %s — retrying in %.1fs", attempt + 1, api_err, delay)
                         await asyncio.sleep(delay)
                     else:
-                        # Non-transient or exhausted retries — emit error event and stop
                         yield {
                             "event": "error",
-                            "data": {"error": f"Gemini API error: {api_err}"},
+                            "data": {"error": f"Groq API error: {api_err}"},
                         }
                         return
 
             if response is None:
-                # Should not happen, but guard anyway
                 yield {
                     "event": "error",
-                    "data": {"error": f"Gemini API error after retries: {last_api_error}"},
+                    "data": {"error": f"Groq API error after retries: {last_api_error}"},
                 }
                 return
 
-            candidate = response.candidates[0]
-            model_message = candidate.content
+            choice = response.choices[0]
+            message = choice.message
 
-            # Text / thought parts
-            text_parts = [p.text for p in model_message.parts if hasattr(p, "text") and p.text]
-            thought_text = "\n".join(text_parts).strip()
+            # Extract reasoning or text thoughts
+            thought_text = getattr(message, "reasoning", None)
+            if not thought_text and hasattr(message, "model_extra") and message.model_extra:
+                thought_text = message.model_extra.get("reasoning")
+            if not thought_text and message.content:
+                thought_text = message.content.strip()
+
             if thought_text:
                 yield {"event": "thought", "data": {"step": turn, "thought": thought_text}}
 
-            # Function calls
-            function_calls = [
-                p.function_call for p in model_message.parts
-                if hasattr(p, "function_call") and p.function_call
-            ]
-            if not function_calls:
-                contents.append(model_message)
-                contents.append(no_tool_nudge)
+            # Check for function / tool calls
+            tool_calls = message.tool_calls or []
+            if not tool_calls:
+                messages.append({"role": "assistant", "content": message.content or ""})
+                messages.append({"role": "user", "content": no_tool_nudge})
                 continue
 
-            response_parts: List[types.Part] = []
-            for fn_call in function_calls:
-                fn_name = fn_call.name
-                fn_args = dict(fn_call.args) if fn_call.args else {}
+            # Append assistant message with its tool calls
+            messages.append(message)
+
+            for tool_call in tool_calls:
+                fn_name = tool_call.function.name
+                fn_args_raw = tool_call.function.arguments or "{}"
+                try:
+                    fn_args = json.loads(fn_args_raw) if isinstance(fn_args_raw, str) else dict(fn_args_raw)
+                except Exception:
+                    fn_args = {}
+
                 yield {
                     "event": "tool_call",
                     "data": {"step": turn, "tool_name": fn_name, "arguments": fn_args},
@@ -204,9 +204,13 @@ class ApexAgentEngine:
                 if fn_name in {"run_command", "run_pytest", "run_sandbox_python"} and result.get("success"):
                     has_verified_run = True
 
-                response_parts.append(
-                    types.Part.from_function_response(name=fn_name, response={"result": result})
-                )
+                # Append tool response
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "name": fn_name,
+                    "content": json.dumps(result),
+                })
 
                 if fn_name == "finish_task" and result.get("finished"):
                     task_completed = True
@@ -219,10 +223,6 @@ class ApexAgentEngine:
                         },
                     }
                     break
-
-            if not task_completed:
-                contents.append(model_message)
-                contents.append(types.Content(role="user", parts=response_parts))
 
         if not task_completed:
             yield {
@@ -248,7 +248,6 @@ class ApexAgentEngine:
         sandbox = SandboxEnvironment()
 
         try:
-            # Populate workspace
             for file_name, code in scenario["initial_files"].items():
                 await asyncio.to_thread(sandbox.write_file, file_name, code)
                 yield {
@@ -275,19 +274,18 @@ class ApexAgentEngine:
                     yield event
                 return
 
-            client = genai.Client(api_key=self.api_key)
-            contents: List[Any] = [
-                f"Coding Goal:\n{user_goal}\n\nWorkspace contents initialized. "
-                "Please inspect files, run sandbox tests to see initial failures, fix the code, and re-test."
+            client = AsyncGroq(api_key=self.api_key)
+            messages = [
+                {"role": "system", "content": SYSTEM_INSTRUCTION},
+                {
+                    "role": "user",
+                    "content": f"Coding Goal:\n{user_goal}\n\nWorkspace contents initialized. "
+                               "Please inspect files, run sandbox tests to see initial failures, fix the code, and re-test.",
+                },
             ]
-            config = types.GenerateContentConfig(
-                system_instruction=SYSTEM_INSTRUCTION,
-                tools=[{"function_declarations": GEMINI_TOOLS_DECLARATION}],
-                temperature=0.2,
-            )
 
             async for event in self._react_loop(
-                sandbox, client, contents, config, max_turns
+                sandbox, client, messages, max_turns
             ):
                 yield event
 
@@ -338,7 +336,6 @@ class ApexAgentEngine:
                 },
             }
 
-            # --- No API key: validation-only path ---
             if not self.api_key:
                 yield {
                     "event": "thought",
@@ -368,9 +365,9 @@ class ApexAgentEngine:
                             "success": passed,
                             "turns": turns,
                             "summary": (
-                                "Validation passed. Add a Gemini API key to let ApexAgent inspect and modify this custom project."
+                                "Validation passed. Add a Groq API key to let ApexAgent inspect and modify this custom project."
                                 if passed
-                                else "Validation failed. Add a Gemini API key for autonomous investigation and fixes, or use the displayed output to debug it manually."
+                                else "Validation failed. Add a Groq API key for autonomous investigation and fixes, or use the displayed output to debug it manually."
                             ),
                         },
                     }
@@ -381,34 +378,33 @@ class ApexAgentEngine:
                     "data": {
                         "success": False,
                         "turns": turns,
-                        "summary": "Add a validation command (for example, 'npm run build', 'npm run test:e2e', or 'python -m pytest -q'). A Gemini API key is required for autonomous custom-project work.",
+                        "summary": "Add a validation command (for example, 'npm run build', 'npm run test:e2e', or 'python -m pytest -q'). A Groq API key is required for autonomous custom-project work.",
                     },
                 }
                 return
 
-            # --- Live agent path ---
-            client = genai.Client(api_key=self.api_key)
+            client = AsyncGroq(api_key=self.api_key)
             validation_note = validation_command or "No validation command was supplied. Inspect the project and choose an existing appropriate test or build command."
             setup_note = setup_command or "No setup command was supplied."
-            contents: List[Any] = [
-                "Coding Goal:\n"
-                f"{user_goal}\n\n"
-                "This is a user-supplied project workspace, not a preset example.\n"
-                f"Recommended setup command: {setup_note}\n"
-                f"Required validation command: {validation_note}\n\n"
-                "First inspect the project. Make minimal, targeted changes. Before finishing, run the required validation command if one was supplied."
+            messages = [
+                {"role": "system", "content": SYSTEM_INSTRUCTION},
+                {
+                    "role": "user",
+                    "content": (
+                        "Coding Goal:\n"
+                        f"{user_goal}\n\n"
+                        "This is a user-supplied project workspace, not a preset example.\n"
+                        f"Recommended setup command: {setup_note}\n"
+                        f"Required validation command: {validation_note}\n\n"
+                        "First inspect the project. Make minimal, targeted changes. Before finishing, run the required validation command if one was supplied."
+                    ),
+                },
             ]
-            config = types.GenerateContentConfig(
-                system_instruction=SYSTEM_INSTRUCTION,
-                tools=[{"function_declarations": GEMINI_TOOLS_DECLARATION}],
-                temperature=0.2,
-            )
 
             async for event in self._react_loop(
                 sandbox,
                 client,
-                contents,
-                config,
+                messages,
                 max_turns,
                 require_verified_run=True,
                 no_tool_nudge="Use a workspace tool to inspect, change, or validate the project before responding.",

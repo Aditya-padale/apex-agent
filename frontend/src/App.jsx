@@ -27,8 +27,8 @@ export default function App() {
   const [currentStep, setCurrentStep] = useState(0);
   const [maxTurns, setMaxTurns] = useState(12);
 
-  const [modelName, setModelName] = useState('gemini-2.5-flash');
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
+  const [modelName, setModelName] = useState('openai/gpt-oss-20b');
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('groq_api_key') || localStorage.getItem('gemini_api_key') || '');
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const abortControllerRef = useRef(null);
 
@@ -98,8 +98,13 @@ export default function App() {
 
   const handleSaveApiKey = (newKey) => {
     setApiKey(newKey);
-    if (newKey) localStorage.setItem('gemini_api_key', newKey);
-    else localStorage.removeItem('gemini_api_key');
+    if (newKey) {
+      localStorage.setItem('groq_api_key', newKey);
+      localStorage.setItem('gemini_api_key', newKey);
+    } else {
+      localStorage.removeItem('groq_api_key');
+      localStorage.removeItem('gemini_api_key');
+    }
   };
 
   const startAgentStream = (params, initialFiles, isCustomRun) => {

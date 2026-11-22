@@ -1,39 +1,40 @@
 import asyncio
+import json
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from backend.agent.core import ApexAgentEngine
 
 
-class MockFunctionCall:
-    def __init__(self, name: str, args: dict):
+class MockFunction:
+    def __init__(self, name: str, arguments: dict):
         self.name = name
-        self.args = args
+        self.arguments = json.dumps(arguments) if isinstance(arguments, dict) else arguments
 
 
-class MockPart:
-    def __init__(self, text: str = None, function_call: MockFunctionCall = None):
-        self.text = text
-        self.function_call = function_call
+class MockToolCall:
+    def __init__(self, name: str, arguments: dict, call_id: str = "call_1"):
+        self.id = call_id
+        self.type = "function"
+        self.function = MockFunction(name, arguments)
 
 
-class MockContent:
-    def __init__(self, parts):
-        self.parts = parts
+class MockMessage:
+    def __init__(self, text: str = None, fn_name: str = None, fn_args: dict = None, reasoning: str = None):
+        self.role = "assistant"
+        self.content = text
+        self.reasoning = reasoning or text
+        self.tool_calls = [MockToolCall(fn_name, fn_args or {})] if fn_name else None
+        self.model_extra = {}
 
 
-class MockCandidate:
-    def __init__(self, content):
-        self.content = content
+class MockChoice:
+    def __init__(self, message: MockMessage):
+        self.message = message
 
 
 class MockResponse:
-    def __init__(self, text: str = None, fn_name: str = None, fn_args: dict = None):
-        parts = []
-        if text:
-            parts.append(MockPart(text=text))
-        if fn_name:
-            parts.append(MockPart(function_call=MockFunctionCall(fn_name, fn_args or {})))
-        self.candidates = [MockCandidate(MockContent(parts))]
+    def __init__(self, text: str = None, fn_name: str = None, fn_args: dict = None, reasoning: str = None):
+        self.choices = [MockChoice(MockMessage(text=text, fn_name=fn_name, fn_args=fn_args, reasoning=reasoning))]
 
 
 @pytest.mark.asyncio
@@ -43,26 +44,29 @@ async def test_agent_loop_scripted_sequence():
         text="I will write the binary search implementation.",
         fn_name="write_file",
         fn_args={"file_path": "binary_search.py", "content": "def binary_search(arr, t): return -1\n"},
+        reasoning="I will write the binary search implementation.",
     )
     resp2 = MockResponse(
         text="I will run pytest to test the code.",
         fn_name="run_pytest",
         fn_args={},
+        reasoning="I will run pytest to test the code.",
     )
     resp3 = MockResponse(
         text="All tests verified. Task complete.",
         fn_name="finish_task",
         fn_args={"summary": "Successfully implemented and tested."},
+        reasoning="All tests verified. Task complete.",
     )
 
-    mock_generate = AsyncMock(side_effect=[resp1, resp2, resp3])
+    mock_create = AsyncMock(side_effect=[resp1, resp2, resp3])
 
-    with patch("backend.agent.core.genai.Client") as mock_client_cls:
+    with patch("backend.agent.core.AsyncGroq") as mock_client_cls:
         mock_client = MagicMock()
-        mock_client.aio.models.generate_content = mock_generate
+        mock_client.chat.completions.create = mock_create
         mock_client_cls.return_value = mock_client
 
-        engine = ApexAgentEngine(api_key="test-fake-key")
+        engine = ApexAgentEngine(api_key="test-fake-key", model_name="openai/gpt-oss-20b")
         events = []
         async for event in engine.run_scenario("scenario_1_binary_search", max_turns=5):
             events.append(event)
@@ -93,16 +97,17 @@ async def test_agent_loop_turn_limit():
         text="I am inspecting files.",
         fn_name="read_file",
         fn_args={"file_path": "binary_search.py"},
+        reasoning="I am inspecting files.",
     )
 
-    mock_generate = AsyncMock(return_value=infinite_resp)
+    mock_create = AsyncMock(return_value=infinite_resp)
 
-    with patch("backend.agent.core.genai.Client") as mock_client_cls:
+    with patch("backend.agent.core.AsyncGroq") as mock_client_cls:
         mock_client = MagicMock()
-        mock_client.aio.models.generate_content = mock_generate
+        mock_client.chat.completions.create = mock_create
         mock_client_cls.return_value = mock_client
 
-        engine = ApexAgentEngine(api_key="test-fake-key")
+        engine = ApexAgentEngine(api_key="test-fake-key", model_name="openai/gpt-oss-20b")
         events = []
         async for event in engine.run_scenario("scenario_1_binary_search", max_turns=3):
             events.append(event)
@@ -120,19 +125,20 @@ async def test_agent_loop_timeout_budget():
         text="I am thinking.",
         fn_name="read_file",
         fn_args={"file_path": "binary_search.py"},
+        reasoning="I am thinking.",
     )
 
-    async def delayed_generate(*args, **kwargs):
+    async def delayed_create(*args, **kwargs):
         await asyncio.sleep(0.05)
         return slow_resp
 
-    with patch("backend.agent.core.genai.Client") as mock_client_cls, \
+    with patch("backend.agent.core.AsyncGroq") as mock_client_cls, \
          patch("backend.agent.core.MAX_RUN_SECONDS", 0.02):
         mock_client = MagicMock()
-        mock_client.aio.models.generate_content = AsyncMock(side_effect=delayed_generate)
+        mock_client.chat.completions.create = AsyncMock(side_effect=delayed_create)
         mock_client_cls.return_value = mock_client
 
-        engine = ApexAgentEngine(api_key="test-fake-key")
+        engine = ApexAgentEngine(api_key="test-fake-key", model_name="openai/gpt-oss-20b")
         events = []
         async for event in engine.run_scenario("scenario_1_binary_search", max_turns=5):
             events.append(event)

@@ -32,22 +32,22 @@ export default function ApiKeyModal({ isOpen, onClose, apiKey, onSaveApiKey }) {
             <Key className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-100">Gemini API Key Configuration</h3>
+            <h3 className="text-base font-bold text-slate-100">Groq API Key Configuration</h3>
             <p className="text-xs text-slate-400">Optional for live agent function calling</p>
           </div>
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-medium text-slate-300">Google Gemini API Key</label>
+          <label className="text-xs font-medium text-slate-300">Groq API Key</label>
           <input
             type="password"
             value={inputKey}
             onChange={(e) => setInputKey(e.target.value)}
-            placeholder="AIzaSy..."
+            placeholder="gsk_..."
             className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
           />
           <p className="text-[11px] text-slate-400 leading-normal">
-            If left blank, ApexAgent operates in <strong>Scripted demo (no API key)</strong> mode: the demo replays a pre-written fix for the built-in scenarios while running real pytest in the sandbox. Add a Gemini API key for the real autonomous agent.
+            If left blank, ApexAgent operates in <strong>Scripted demo (no API key)</strong> mode: the demo replays a pre-written fix for the built-in scenarios while running real pytest in the sandbox. Add a Groq API key for the real autonomous agent.
           </p>
         </div>
 
