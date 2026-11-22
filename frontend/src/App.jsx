@@ -6,6 +6,10 @@ import TrajectoryStream from './components/TrajectoryStream';
 import WorkspaceViewer from './components/WorkspaceViewer';
 import ApiKeyModal from './components/ApiKeyModal';
 import { fetchHealth, fetchScenarios, streamAgentRun } from './api';
+import { WORKSPACE_PRESETS } from './presets';
+import { FolderGit2, Sparkles } from 'lucide-react';
+
+const defaultPreset = WORKSPACE_PRESETS[0];
 
 export default function App() {
   const [scenarios, setScenarios] = useState([]);
@@ -13,14 +17,16 @@ export default function App() {
   const [benchmarkPrompt, setBenchmarkPrompt] = useState('');
   const [loadingScenarios, setLoadingScenarios] = useState(true);
   const [codeExecutionEnabled, setCodeExecutionEnabled] = useState(null);
-  const [workspaceMode, setWorkspaceMode] = useState('benchmark');
 
-  const [workspaceFiles, setWorkspaceFiles] = useState({});
-  const [customWorkspaceFiles, setCustomWorkspaceFiles] = useState({});
-  const [projectName, setProjectName] = useState('My workspace');
-  const [projectGoal, setProjectGoal] = useState('');
-  const [validationCommand, setValidationCommand] = useState('');
-  const [setupCommand, setSetupCommand] = useState('');
+  // 'custom' is default as requested: "first show my project option on the screen and then demo scenarios"
+  const [workspaceMode, setWorkspaceMode] = useState('custom');
+
+  const [customWorkspaceFiles, setCustomWorkspaceFiles] = useState(defaultPreset.files);
+  const [workspaceFiles, setWorkspaceFiles] = useState(defaultPreset.files);
+  const [projectName, setProjectName] = useState(defaultPreset.projectName);
+  const [projectGoal, setProjectGoal] = useState(defaultPreset.goal);
+  const [validationCommand, setValidationCommand] = useState(defaultPreset.validationCommand);
+  const [setupCommand, setSetupCommand] = useState(defaultPreset.setupCommand || '');
 
   const [events, setEvents] = useState([]);
   const [status, setStatus] = useState('idle');
@@ -41,7 +47,7 @@ export default function App() {
         setScenarios(list);
         if (list.length) {
           setSelectedScenario(list[0]);
-          setWorkspaceFiles(list[0].initial_files || {});
+          // Note: workspaceFiles stays customWorkspaceFiles because workspaceMode is 'custom'
         }
       } catch (error) {
         console.error('Failed to load scenarios:', error);
@@ -199,24 +205,37 @@ export default function App() {
         modelName={modelName}
         setModelName={setModelName}
         onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+        workspaceMode={workspaceMode}
       />
 
-      <main className="flex-1 grid grid-cols-12 gap-4 p-4 overflow-hidden">
+      <main className="flex-1 grid grid-cols-12 gap-3.5 p-3.5 overflow-hidden">
+        {/* Left Column: My Project / Demo Scenarios */}
         <div className="col-span-12 lg:col-span-3 h-full overflow-hidden flex flex-col gap-2">
-          <div className="grid grid-cols-2 rounded-lg bg-slate-900 border border-slate-800 p-1 shrink-0">
-            <button
-              onClick={() => handleModeChange('benchmark')}
-              disabled={status === 'running'}
-              className={`py-1.5 rounded-md text-xs font-medium transition-colors disabled:opacity-50 ${!isCustomWorkspace ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
-            >
-              Demo scenarios
-            </button>
+          {/* Segmented Control: 'My project' FIRST, then 'Demo scenarios' */}
+          <div className="grid grid-cols-2 rounded-xl bg-slate-900/90 border border-slate-800/90 p-1 shrink-0 shadow-inner">
             <button
               onClick={() => handleModeChange('custom')}
               disabled={status === 'running'}
-              className={`py-1.5 rounded-md text-xs font-medium transition-colors disabled:opacity-50 ${isCustomWorkspace ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+              className={`py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 disabled:opacity-50 ${
+                isCustomWorkspace
+                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/25'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-850'
+              }`}
             >
-              My project
+              <FolderGit2 className="w-3.5 h-3.5" />
+              <span>My project</span>
+            </button>
+            <button
+              onClick={() => handleModeChange('benchmark')}
+              disabled={status === 'running'}
+              className={`py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 disabled:opacity-50 ${
+                !isCustomWorkspace
+                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/25'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-850'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Demo scenarios</span>
             </button>
           </div>
 
@@ -256,10 +275,12 @@ export default function App() {
           </div>
         </div>
 
+        {/* Center Column: ReAct Trajectory & Thought Stream */}
         <div className="col-span-12 lg:col-span-5 h-full overflow-hidden">
           <TrajectoryStream events={events} status={status} currentStep={currentStep} maxTurns={maxTurns} />
         </div>
 
+        {/* Right Column: Sandbox Workspace Viewer */}
         <div className="col-span-12 lg:col-span-4 h-full overflow-hidden">
           <WorkspaceViewer
             workspaceFiles={workspaceFiles}
