@@ -5,7 +5,9 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: '../dist',
+    // Vercel builds this service from frontend/, so the production assets must
+    // remain inside that service root at frontend/dist.
+    outDir: 'dist',
     emptyOutDir: true,
   },
   server: {
