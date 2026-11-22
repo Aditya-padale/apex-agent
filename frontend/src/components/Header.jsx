@@ -93,7 +93,7 @@ export default function Header({
           }`}
         >
           <Key className="w-3.5 h-3.5" />
-          <span>{hasApiKey ? 'API Key Set' : 'Simulated (No Key)'}</span>
+          <span>{hasApiKey ? 'API Key Set' : 'Scripted demo (no API key)'}</span>
         </button>
       </div>
     </header>

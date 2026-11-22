@@ -47,7 +47,7 @@ export default function ApiKeyModal({ isOpen, onClose, apiKey, onSaveApiKey }) {
             className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
           />
           <p className="text-[11px] text-slate-400 leading-normal">
-            If left blank, ApexAgent automatically operates in <strong>High-Fidelity Sandbox Simulation Mode</strong>, executing real pytest runs and self-correction cycles out of the box!
+            If left blank, ApexAgent operates in <strong>Scripted demo (no API key)</strong> mode: the demo replays a pre-written fix for the built-in scenarios while running real pytest in the sandbox. Add a Gemini API key for the real autonomous agent.
           </p>
         </div>
 

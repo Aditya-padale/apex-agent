@@ -266,6 +266,7 @@ class ApexAgentEngine:
                     "goal": user_goal,
                     "model": self.model_name,
                     "has_api_key": bool(self.api_key),
+                    "mode": "live" if self.api_key else "demo",
                 },
             }
 
@@ -331,6 +332,7 @@ class ApexAgentEngine:
                     "goal": user_goal,
                     "model": self.model_name,
                     "has_api_key": bool(self.api_key),
+                    "mode": "live" if self.api_key else "demo",
                     "workspace_type": "custom",
                     "validation_command": validation_command,
                 },

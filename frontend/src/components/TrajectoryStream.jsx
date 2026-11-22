@@ -17,21 +17,36 @@ export default function TrajectoryStream({ events, status, currentStep, maxTurns
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [events]);
 
+  const startEvent = events.find((e) => e.event === 'agent_start');
+  const currentMode = startEvent?.data?.mode || (startEvent ? (startEvent.data.has_api_key ? 'live' : 'demo') : null);
+
   const renderEvent = (ev, index) => {
     switch (ev.event) {
       case 'agent_start':
         const isCustomWorkspace = ev.data.workspace_type === 'custom';
+        const isLive = ev.data.mode === 'live' || (ev.data.mode === undefined && ev.data.has_api_key);
         return (
-          <div key={index} className="bg-indigo-950/30 border border-indigo-500/30 rounded-xl p-3.5 space-y-1">
-            <div className="flex items-center gap-2 text-indigo-300 font-semibold text-xs">
-              <Sparkles className="w-4 h-4 text-cyan-400" />
-              Agent Initialized — {ev.data.title}
+          <div key={index} className="bg-indigo-950/30 border border-indigo-500/30 rounded-xl p-3.5 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-indigo-300 font-semibold text-xs">
+                <Sparkles className="w-4 h-4 text-cyan-400" />
+                <span>Agent Initialized — {ev.data.title}</span>
+              </div>
+              <span
+                className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider border ${
+                  isLive
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                }`}
+              >
+                {isLive ? '● LIVE AGENT' : '▲ SCRIPTED DEMO'}
+              </span>
             </div>
             <p className="text-xs text-slate-300 font-sans">{ev.data.goal}</p>
             <div className="flex items-center gap-3 font-mono text-[10px] text-slate-400 pt-1">
               <span>Model: <strong className="text-indigo-300">{ev.data.model}</strong></span>
-              <span>Mode: <strong className={ev.data.has_api_key ? "text-emerald-400" : "text-amber-400"}>
-                {ev.data.has_api_key ? 'Gemini Live API' : isCustomWorkspace ? 'Validation-only (no key)' : 'Sandbox Simulation'}
+              <span>Mode: <strong className={isLive ? "text-emerald-400" : "text-amber-400"}>
+                {isLive ? 'Live Autonomous Agent' : isCustomWorkspace ? 'Validation-only (no key)' : 'Scripted demo (no API key)'}
               </strong></span>
             </div>
             {isCustomWorkspace && ev.data.validation_command && (
@@ -181,6 +196,17 @@ export default function TrajectoryStream({ events, status, currentStep, maxTurns
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-cyan-400" />
           <h2 className="text-sm font-semibold text-slate-200">ReAct Trajectory & Thought Stream</h2>
+          {currentMode && (
+            <span
+              className={`ml-2 px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider border ${
+                currentMode === 'live'
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                  : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+              }`}
+            >
+              {currentMode === 'live' ? '● LIVE AGENT' : '▲ SCRIPTED DEMO'}
+            </span>
+          )}
         </div>
         {currentStep > 0 && (
           <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-slate-900 text-slate-400 border border-slate-800">

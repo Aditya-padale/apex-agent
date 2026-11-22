@@ -43,8 +43,9 @@ Traditional AI coding assistants suggest raw snippets, leaving developers to man
 - 📡 **Real-Time Event Streaming (SSE)**: Streams step-by-step agent trajectories, tool invocations, stdout logs, and status updates directly to the UI.
 - 🧪 **Isolated Execution Sandbox**: Safely run Python scripts, unit test suites (pytest), search code patterns, and modify workspace files.
 - 🎯 **Benchmark Scenarios**: Built-in debugging benchmarks ranging from algorithmic edge cases (Binary Search) to corrupted log processing pipelines and async HTTP backoff retries.
+- 🎬 **Scripted Demo (no API key)**: Without an API key, the platform replays a pre-written fix for built-in scenarios while running real pytest in the sandbox. Add a Gemini API key to activate the live autonomous agent.
 - 📂 **Custom Workspace Importer**: Upload and debug your own multi-file Python projects directly inside the web interface.
-- 🔐 **Secure & Flexible API Keys**: Bring your own `GEMINI_API_KEY` via HTTP headers or use backend environment variables securely.
+- 🔐 **Secure & Flexible API Keys**: Bring your own `GEMINI_API_KEY` via `X-API-Key` HTTP headers or use backend environment variables securely. Keys are never logged or echoed.
 
 ---
 
