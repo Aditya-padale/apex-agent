@@ -7,7 +7,6 @@ import {
   ShieldAlert,
   Square,
   Trash2,
-  Upload,
   Sparkles,
   Terminal,
   FolderGit2,
@@ -82,14 +81,14 @@ export default function ProjectSetupPanel({
     const sourceFiles = normaliseImportedFiles(event.target.files);
     event.target.value = '';
     if (!sourceFiles.length) {
-      setImportMessage('No supported text files were found. Dependencies and files over 1 MB are skipped.');
+      setImportMessage('No supported text files found. Dependencies and files over 1 MB are skipped.');
       return;
     }
 
     try {
       const entries = await Promise.all(sourceFiles.map(async ({ file, path }) => [path, await file.text()]));
       onImportFiles(Object.fromEntries(entries));
-      setImportMessage(`${entries.length} text files imported. Dependencies, build artifacts, and secret files were excluded.`);
+      setImportMessage(`${entries.length} files imported into workspace.`);
     } catch (error) {
       setImportMessage(`Could not read project files: ${error.message}`);
     }
@@ -98,7 +97,7 @@ export default function ProjectSetupPanel({
   const handleAddFile = () => {
     const path = newFilePath.trim().replace(/\\/g, '/').replace(/^\/+/, '');
     if (!path || path.split('/').includes('..')) {
-      setImportMessage('Please enter a valid relative path such as src/index.js or test_ops.py.');
+      setImportMessage('Please enter a valid relative path such as src/index.js.');
       return;
     }
     onAddFile(path, newFileContent);
@@ -119,30 +118,30 @@ export default function ProjectSetupPanel({
   };
 
   return (
-    <div className="glass-panel p-4 flex flex-col h-full gap-3.5 overflow-y-auto">
-      {/* Header & Description */}
+    <div className="neo-panel p-4 flex flex-col h-full gap-3 overflow-y-auto">
+      {/* Header */}
       <div>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            <FolderGit2 className="w-4 h-4 text-cyan-400" />
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-200">My Project Setup</h2>
+            <FolderGit2 className="w-4 h-4 text-[#FFE600] stroke-[2.5]" />
+            <h2 className="text-xs font-black uppercase tracking-wider text-white">MY PROJECT SETUP</h2>
           </div>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300">
-            {fileCount} {fileCount === 1 ? 'file' : 'files'}
+          <span className="neo-badge-sm bg-[#FFE600] text-black px-2 py-0.5 rounded text-[10px] font-mono">
+            {fileCount} {fileCount === 1 ? 'FILE' : 'FILES'}
           </span>
         </div>
-        <p className="text-[11px] text-slate-400 leading-relaxed">
-          Provide your project files and a validation command. ApexAgent will run in an isolated sandbox to inspect, modify, and test your code.
+        <p className="text-[11px] text-slate-400 font-medium">
+          Set up project files & validation command for the ReAct sandbox.
         </p>
       </div>
 
       {/* Quick Starters Presets */}
-      <div className="space-y-1.5 bg-slate-900/60 border border-slate-800/80 rounded-xl p-2.5">
-        <div className="flex items-center justify-between text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+      <div className="bg-[#10111a] border-2 border-black shadow-[2px_2px_0px_0px_#000] rounded-lg p-2.5 space-y-1.5">
+        <div className="flex items-center justify-between text-[10px] font-black uppercase text-[#FFE600] tracking-wider">
           <span className="flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-indigo-400" /> Quick Starters
+            <Sparkles className="w-3 h-3 stroke-[2.5]" /> QUICK STARTERS
           </span>
-          <span className="text-slate-500">Click to load</span>
+          <span className="text-slate-500 font-mono">CLICK TO LOAD</span>
         </div>
         <div className="grid grid-cols-2 gap-1.5">
           {WORKSPACE_PRESETS.map((preset) => (
@@ -151,12 +150,14 @@ export default function ProjectSetupPanel({
               type="button"
               onClick={() => applyPreset(preset)}
               disabled={isRunning}
-              className="text-left p-1.5 rounded-lg bg-slate-950/70 hover:bg-indigo-950/40 border border-slate-800 hover:border-indigo-500/40 transition-all text-xs group disabled:opacity-50"
+              className="text-left p-1.5 rounded bg-[#181928] hover:bg-[#FFE600] hover:text-black border-2 border-black shadow-[2px_2px_0px_0px_#000] transition-all text-xs group disabled:opacity-50"
             >
-              <div className="font-medium text-slate-200 group-hover:text-indigo-300 transition-colors text-[11px] truncate">
+              <div className="font-bold text-white group-hover:text-black text-[11px] truncate">
                 {preset.label}
               </div>
-              <div className="text-[9px] text-slate-500 line-clamp-1">{preset.description}</div>
+              <div className="text-[9px] text-slate-400 group-hover:text-black line-clamp-1 font-mono">
+                {preset.description}
+              </div>
             </button>
           ))}
         </div>
@@ -164,9 +165,9 @@ export default function ProjectSetupPanel({
 
       {/* Project Name */}
       <div className="space-y-1">
-        <label className="text-[11px] font-medium text-slate-300 flex items-center gap-1.5">
-          <FileText className="w-3 h-3 text-slate-400" />
-          Project Name
+        <label className="text-[11px] font-bold text-white uppercase flex items-center gap-1.5">
+          <FileText className="w-3 h-3 text-[#38BDF8]" />
+          PROJECT NAME
         </label>
         <input
           value={projectName}
@@ -174,16 +175,16 @@ export default function ProjectSetupPanel({
           disabled={isRunning}
           maxLength={120}
           placeholder="e.g. Authentication Service"
-          className="w-full bg-slate-900/90 border border-slate-800/90 rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 disabled:opacity-50 transition-colors"
+          className="w-full neo-input rounded-md px-2.5 py-1.5 text-xs font-mono disabled:opacity-50"
         />
       </div>
 
       {/* Folder Import Dropzone */}
       <div
-        className={`rounded-xl border border-dashed transition-all p-3 space-y-2 text-center ${
+        className={`rounded-lg border-2 border-dashed transition-all p-3 space-y-2 text-center shadow-[3px_3px_0px_0px_#000] ${
           isDragOver
-            ? 'border-cyan-400 bg-cyan-950/20'
-            : 'border-indigo-500/30 bg-indigo-950/10 hover:border-indigo-500/50 hover:bg-indigo-950/20'
+            ? 'border-[#FFE600] bg-[#FFE600]/20'
+            : 'border-slate-700 bg-[#10111a] hover:border-[#FFE600]'
         }`}
         onDragOver={(e) => {
           e.preventDefault();
@@ -212,38 +213,38 @@ export default function ProjectSetupPanel({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={isRunning}
-          className="w-full py-2 rounded-lg bg-gradient-to-r from-indigo-600/90 to-cyan-600/90 hover:from-indigo-500 hover:to-cyan-500 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50"
+          className="neo-btn bg-[#FFE600] text-black w-full py-2 rounded-md font-black uppercase text-xs flex items-center justify-center gap-2"
         >
-          <FolderOpen className="w-3.5 h-3.5" />
-          Import Project Folder
+          <FolderOpen className="w-3.5 h-3.5 stroke-[2.5]" />
+          IMPORT PROJECT FOLDER
         </button>
-        <p className="text-[10px] text-slate-400">
-          Drop files or select folder • Skips node_modules, .git, venv
+        <p className="text-[10px] text-slate-400 font-mono">
+          Drag & drop folder • Skips node_modules & .git
         </p>
       </div>
 
-      {/* Add File Toggle & Drawer */}
-      <div className="border border-slate-800/80 rounded-xl overflow-hidden bg-slate-900/40">
+      {/* Add / Replace File Drawer */}
+      <div className="border-2 border-black rounded-lg overflow-hidden bg-[#10111a] shadow-[2px_2px_0px_0px_#000]">
         <button
           type="button"
           onClick={() => setShowAddFile(!showAddFile)}
-          className="w-full px-3 py-2 flex items-center justify-between text-xs text-slate-300 hover:text-white transition-colors"
+          className="w-full px-2.5 py-1.5 flex items-center justify-between text-xs font-bold text-white hover:bg-[#181928] transition-colors"
         >
-          <span className="flex items-center gap-1.5 font-medium">
-            <FilePlus2 className="w-3.5 h-3.5 text-emerald-400" />
-            Add / Replace File Manually
+          <span className="flex items-center gap-1.5">
+            <FilePlus2 className="w-3.5 h-3.5 text-[#A3E635]" />
+            ADD / EDIT FILE MANUALLY
           </span>
-          {showAddFile ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
+          {showAddFile ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>
 
         {showAddFile && (
-          <div className="p-3 border-t border-slate-800/80 space-y-2 bg-slate-950/50">
+          <div className="p-2.5 border-t-2 border-black space-y-2 bg-[#0c0d14]">
             <input
               value={newFilePath}
               onChange={(event) => setNewFilePath(event.target.value)}
               disabled={isRunning}
-              placeholder="e.g. src/auth.py or tests/test_auth.py"
-              className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 disabled:opacity-50"
+              placeholder="e.g. src/auth.py"
+              className="w-full neo-input rounded-md px-2 py-1 text-xs font-mono"
             />
             <textarea
               rows={3}
@@ -251,15 +252,15 @@ export default function ProjectSetupPanel({
               onChange={(event) => setNewFileContent(event.target.value)}
               disabled={isRunning}
               placeholder="File code contents..."
-              className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 resize-y disabled:opacity-50"
+              className="w-full neo-input rounded-md p-2 text-xs font-mono resize-y"
             />
             <button
               type="button"
               onClick={handleAddFile}
               disabled={isRunning || !newFilePath.trim()}
-              className="w-full py-1.5 rounded-lg bg-emerald-600/80 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors"
+              className="neo-btn bg-[#A3E635] text-black w-full py-1.5 rounded-md font-bold uppercase text-xs flex items-center justify-center gap-1.5"
             >
-              <Check className="w-3.5 h-3.5" /> Save File to Workspace
+              <Check className="w-3.5 h-3.5 stroke-[2.5]" /> SAVE TO WORKSPACE
             </button>
           </div>
         )}
@@ -268,16 +269,16 @@ export default function ProjectSetupPanel({
       {/* Goal / Objective */}
       <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <label className="text-[11px] font-medium text-slate-300">Goal / Instructions</label>
-          <span className="text-[10px] text-slate-500">{goal.length} chars</span>
+          <label className="text-[11px] font-bold text-white uppercase">GOAL / INSTRUCTIONS</label>
+          <span className="text-[10px] font-mono text-slate-500">{goal.length} chars</span>
         </div>
         <textarea
           rows={3}
           value={goal}
           onChange={(event) => setGoal(event.target.value)}
           disabled={isRunning}
-          placeholder="Describe what the agent should accomplish (e.g. Fix failing tests, implement the missing method, ensure all validations pass)..."
-          className="w-full bg-slate-900/90 border border-slate-800/90 rounded-lg p-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 resize-none disabled:opacity-50 transition-colors"
+          placeholder="Describe what the agent should accomplish (e.g. Fix failing tests, implement the missing method)..."
+          className="w-full neo-input rounded-md p-2 text-xs text-white placeholder-slate-500 resize-none"
         />
       </div>
 
@@ -285,21 +286,21 @@ export default function ProjectSetupPanel({
       <div className="space-y-2">
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <label className="text-[11px] font-medium text-slate-300 flex items-center gap-1">
-              <Terminal className="w-3 h-3 text-cyan-400" /> Validation Command
+            <label className="text-[11px] font-bold text-white uppercase flex items-center gap-1">
+              <Terminal className="w-3 h-3 text-[#38BDF8]" /> VALIDATION COMMAND
             </label>
             <div className="flex gap-1 text-[9px] font-mono">
               <button
                 type="button"
                 onClick={() => setValidationCommand('python -m pytest -q')}
-                className="px-1.5 py-0.5 rounded bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800"
+                className="neo-btn bg-[#0c0d14] hover:bg-[#38BDF8] hover:text-black text-slate-300 px-1.5 py-0.5 rounded text-[9px]"
               >
                 pytest
               </button>
               <button
                 type="button"
                 onClick={() => setValidationCommand('npm test')}
-                className="px-1.5 py-0.5 rounded bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800"
+                className="neo-btn bg-[#0c0d14] hover:bg-[#38BDF8] hover:text-black text-slate-300 px-1.5 py-0.5 rounded text-[9px]"
               >
                 npm test
               </button>
@@ -310,71 +311,71 @@ export default function ProjectSetupPanel({
             onChange={(event) => setValidationCommand(event.target.value)}
             disabled={isRunning}
             placeholder="e.g. python -m pytest test_math_ops.py -q"
-            className="w-full bg-slate-900/90 border border-slate-800/90 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500/80 disabled:opacity-50"
+            className="w-full neo-input rounded-md px-2.5 py-1.5 text-xs font-mono"
           />
         </div>
 
         <div className="space-y-1">
-          <label className="text-[11px] font-medium text-slate-400">Optional Setup Command</label>
+          <label className="text-[10px] font-bold text-slate-400 uppercase">OPTIONAL SETUP COMMAND</label>
           <input
             value={setupCommand}
             onChange={(event) => setSetupCommand(event.target.value)}
             disabled={isRunning}
             placeholder="e.g. pip install -r requirements.txt"
-            className="w-full bg-slate-900/70 border border-slate-800/80 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-300 placeholder-slate-600 focus:outline-none focus:border-indigo-500/80 disabled:opacity-50"
+            className="w-full neo-input rounded-md px-2.5 py-1.5 text-xs font-mono"
           />
         </div>
       </div>
 
-      {/* Import / Status Feedback */}
+      {/* Import / Message Feedback */}
       {importMessage && (
-        <div className="text-[11px] leading-relaxed text-amber-200 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 flex gap-2">
-          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-400" />
+        <div className="neo-badge bg-[#FFE600] text-black rounded-md p-2 text-[11px] font-bold flex gap-2">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 stroke-[2.5]" />
           <span>{importMessage}</span>
         </div>
       )}
 
-      {/* Files Summary & Clear */}
-      <div className="flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-800/80 pt-2">
-        <span className="font-mono text-slate-300">
-          {fileCount} {fileCount === 1 ? 'file' : 'files'} in workspace
+      {/* Workspace Files Count & Clear */}
+      <div className="flex items-center justify-between text-[11px] border-t-2 border-black pt-2">
+        <span className="font-mono font-bold text-slate-300">
+          {fileCount} {fileCount === 1 ? 'FILE' : 'FILES'} IN WORKSPACE
         </span>
         <button
           type="button"
           onClick={onClearWorkspace}
           disabled={isRunning || fileCount === 0}
-          className="flex items-center gap-1 text-rose-400 hover:text-rose-300 text-[11px] font-medium disabled:opacity-40 transition-colors"
+          className="neo-btn bg-[#FF3366] text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1 disabled:opacity-40"
         >
-          <Trash2 className="w-3 h-3" /> Clear All
+          <Trash2 className="w-3 h-3 stroke-[2.5]" /> CLEAR ALL
         </button>
       </div>
 
-      {/* Sandbox Advisory */}
-      <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-2 flex gap-2 text-[10px] leading-relaxed text-amber-100/75">
-        <ShieldAlert className="w-3.5 h-3.5 shrink-0 text-amber-400 mt-0.5" />
+      {/* Sandbox Advisory Banner */}
+      <div className="neo-card bg-[#10111a] p-2 flex gap-2 text-[10px] font-mono text-slate-300">
+        <ShieldAlert className="w-3.5 h-3.5 shrink-0 text-[#FFE600] stroke-[2.5] mt-0.5" />
         <span>
           {customExecutionDisabled
-            ? 'Custom workspace execution is currently disabled on this server. Demo benchmark scenarios are available.'
-            : 'Sandbox limits: Subprocesses run in an isolated environment with POSIX limits.'}
+            ? 'Custom workspace execution is disabled. Built-in benchmarks remain available.'
+            : 'Sandbox limits: Subprocesses execute in isolated POSIX resource limits.'}
         </span>
       </div>
 
-      {/* CTA Button */}
+      {/* Action CTA Button */}
       <div className="pt-1">
         {isRunning ? (
           <button
             onClick={onCancelAgent}
-            className="w-full py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-rose-500/10"
+            className="neo-btn bg-[#FF3366] text-white w-full py-2.5 rounded-lg font-black uppercase text-xs flex items-center justify-center gap-2"
           >
-            <Square className="w-3.5 h-3.5 fill-current" /> Halt Agent Execution
+            <Square className="w-3.5 h-3.5 fill-white" /> HALT AGENT EXECUTION
           </button>
         ) : (
           <button
             onClick={onRunAgent}
             disabled={!fileCount || !goal.trim() || customExecutionDisabled}
-            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="neo-btn bg-[#A3E635] text-black hover:bg-[#86efac] w-full py-2.5 rounded-lg font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            <Play className="w-3.5 h-3.5 fill-current" /> Run My Workspace
+            <Play className="w-3.5 h-3.5 fill-black" /> RUN MY WORKSPACE
           </button>
         )}
       </div>

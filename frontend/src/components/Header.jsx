@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, Key, Cpu, AlertCircle, CheckCircle2, Terminal, ShieldCheck, Sparkles } from 'lucide-react';
+import { Zap, Key, Cpu, AlertCircle, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 
 export default function Header({
   status,
@@ -11,86 +11,78 @@ export default function Header({
   workspaceMode,
 }) {
   return (
-    <header className="glass-panel border-b border-slate-800/80 px-6 py-3 flex items-center justify-between sticky top-0 z-40 bg-slate-950/85 backdrop-blur-xl">
+    <header className="border-b-2 border-black bg-[#151624] px-5 py-2.5 flex items-center justify-between sticky top-0 z-40 shadow-[0_3px_0_0_#000]">
       {/* Brand & Logo */}
-      <div className="flex items-center space-x-3.5">
-        <div className="relative group">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-cyan-400 p-0.5 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:shadow-indigo-500/40 transition-shadow duration-300">
-            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-              <Zap className="w-4 h-4 text-cyan-400 fill-cyan-400/20" />
-            </div>
-          </div>
-          <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-cyan-400 border-2 border-slate-950 animate-pulse" />
+      <div className="flex items-center space-x-3">
+        <div className="w-9 h-9 rounded-lg bg-[#FFE600] border-2 border-black shadow-[3px_3px_0_0_#000] flex items-center justify-center">
+          <Zap className="w-5 h-5 text-black fill-black" />
         </div>
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="font-extrabold text-base tracking-tight gradient-text">ApexAgent</h1>
-            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300">
+            <h1 className="font-black text-lg tracking-tight text-white uppercase">ApexAgent</h1>
+            <span className="neo-badge-sm bg-[#A3E635] text-black px-2 py-0.5 rounded text-[10px] font-mono">
               v1.0 ReAct
             </span>
-            <span className="hidden sm:inline-flex text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-400">
-              {workspaceMode === 'custom' ? 'My Workspace' : 'Benchmark'}
+            <span className="neo-badge-sm bg-[#38BDF8] text-black px-2 py-0.5 rounded text-[10px] font-mono hidden sm:inline-block">
+              {workspaceMode === 'custom' ? 'My Project' : 'Benchmark'}
             </span>
           </div>
-          <p className="text-[11px] text-slate-400/90 leading-tight">Autonomous Coding & Verification Agent</p>
+          <p className="text-[11px] text-slate-400 font-medium">Autonomous Coding & Verification Engine</p>
         </div>
       </div>
 
       {/* Middle Status Indicator */}
-      <div className="hidden md:flex items-center space-x-2.5 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-800/90 shadow-inner">
+      <div className="hidden md:flex items-center space-x-2">
         {status === 'idle' && (
-          <>
-            <span className="w-2 h-2 rounded-full bg-slate-500" />
-            <span className="text-xs font-medium text-slate-400">System Ready</span>
-          </>
+          <div className="neo-badge bg-[#1c1d30] text-slate-300 px-3 py-1 rounded-md text-xs font-mono flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-slate-400" />
+            <span>SYSTEM READY</span>
+          </div>
         )}
         {status === 'running' && (
-          <>
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 status-running" />
-            </span>
-            <span className="text-xs font-semibold text-emerald-400">Agent Active • ReAct Loop</span>
-          </>
+          <div className="neo-badge bg-[#A3E635] text-black px-3 py-1 rounded-md text-xs font-mono flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-black neo-pulse" />
+            <span>AGENT ACTIVE (REACT LOOP)</span>
+          </div>
         )}
         {status === 'finished' && runSucceeded !== false && (
-          <>
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-xs font-semibold text-emerald-400">Task Completed & Verified</span>
-          </>
+          <div className="neo-badge bg-[#38BDF8] text-black px-3 py-1 rounded-md text-xs font-mono flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>TASK VERIFIED (PASSED)</span>
+          </div>
         )}
         {status === 'finished' && runSucceeded === false && (
-          <>
-            <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-xs font-medium text-amber-300">Run Finished • Needs Attention</span>
-          </>
+          <div className="neo-badge bg-[#FB923C] text-black px-3 py-1 rounded-md text-xs font-mono flex items-center gap-1.5">
+            <AlertCircle className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>NEEDS ATTENTION</span>
+          </div>
         )}
         {status === 'error' && (
-          <>
-            <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
-            <span className="text-xs font-medium text-rose-400">Execution Error</span>
-          </>
+          <div className="neo-badge bg-[#FF3366] text-white px-3 py-1 rounded-md text-xs font-mono flex items-center gap-1.5">
+            <AlertCircle className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>HALTED WITH ERROR</span>
+          </div>
         )}
       </div>
 
       {/* Right Controls: Model & API Key */}
       <div className="flex items-center space-x-2.5">
         {/* Model Selector */}
-        <div className="flex items-center space-x-1.5 bg-slate-900/90 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs hover:border-slate-700 transition-colors">
-          <Cpu className="w-3.5 h-3.5 text-violet-400" />
+        <div className="flex items-center space-x-1.5 bg-[#0f101b] border-2 border-black shadow-[2px_2px_0_0_#000] rounded-md px-2.5 py-1 text-xs">
+          <Cpu className="w-3.5 h-3.5 text-[#38BDF8]" />
           <select
             value={modelName}
             onChange={(e) => setModelName(e.target.value)}
             disabled={status === 'running'}
-            className="bg-transparent text-slate-200 font-mono text-[11px] focus:outline-none cursor-pointer disabled:opacity-50"
+            className="bg-transparent text-white font-mono text-[11px] font-bold focus:outline-none cursor-pointer disabled:opacity-50"
           >
-            <option value="openai/gpt-oss-20b" className="bg-slate-900 text-slate-200">
-              openai/gpt-oss-20b (Default)
+            <option value="openai/gpt-oss-20b" className="bg-[#151624] text-white">
+              openai/gpt-oss-20b
             </option>
-            <option value="openai/gpt-oss-120b" className="bg-slate-900 text-slate-200">
+            <option value="openai/gpt-oss-120b" className="bg-[#151624] text-white">
               openai/gpt-oss-120b
             </option>
-            <option value="qwen/qwen3.8-27b" className="bg-slate-900 text-slate-200">
+            <option value="qwen/qwen3.8-27b" className="bg-[#151624] text-white">
               qwen/qwen3.8-27b
             </option>
           </select>
@@ -99,24 +91,24 @@ export default function Header({
         {/* API Key Modal Button */}
         <button
           onClick={onOpenApiKeyModal}
-          className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border shadow-sm ${
+          className={`neo-btn flex items-center space-x-1.5 px-3 py-1 rounded-md text-xs font-mono ${
             hasApiKey
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20'
-              : 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20'
+              ? 'bg-[#A3E635] text-black'
+              : 'bg-[#FFE600] text-black'
           }`}
           title={hasApiKey ? 'Groq API Key Configured' : 'No API Key: Running in Scripted Demo mode'}
         >
           {hasApiKey ? (
             <>
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden sm:inline">Groq Key Active</span>
-              <span className="sm:hidden">Key Active</span>
+              <ShieldCheck className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span className="hidden sm:inline">KEY ACTIVE</span>
+              <span className="sm:hidden">KEY</span>
             </>
           ) : (
             <>
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">Scripted demo (no API key)</span>
-              <span className="sm:hidden">Demo Mode</span>
+              <Sparkles className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span className="hidden sm:inline">SCRIPTED DEMO</span>
+              <span className="sm:hidden">DEMO</span>
             </>
           )}
         </button>

@@ -18,7 +18,7 @@ export default function App() {
   const [loadingScenarios, setLoadingScenarios] = useState(true);
   const [codeExecutionEnabled, setCodeExecutionEnabled] = useState(null);
 
-  // 'custom' is default as requested: "first show my project option on the screen and then demo scenarios"
+  // 'custom' ("My project") is default on launch
   const [workspaceMode, setWorkspaceMode] = useState('custom');
 
   const [customWorkspaceFiles, setCustomWorkspaceFiles] = useState(defaultPreset.files);
@@ -47,7 +47,6 @@ export default function App() {
         setScenarios(list);
         if (list.length) {
           setSelectedScenario(list[0]);
-          // Note: workspaceFiles stays customWorkspaceFiles because workspaceMode is 'custom'
         }
       } catch (error) {
         console.error('Failed to load scenarios:', error);
@@ -197,7 +196,7 @@ export default function App() {
   const isCustomWorkspace = workspaceMode === 'custom';
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-slate-950 text-slate-100 font-sans">
+    <div className="flex flex-col h-screen overflow-hidden bg-[#0c0d14] text-slate-100 font-sans">
       <Header
         status={status}
         runSucceeded={runSucceeded}
@@ -211,30 +210,30 @@ export default function App() {
       <main className="flex-1 grid grid-cols-12 gap-3.5 p-3.5 overflow-hidden">
         {/* Left Column: My Project / Demo Scenarios */}
         <div className="col-span-12 lg:col-span-3 h-full overflow-hidden flex flex-col gap-2">
-          {/* Segmented Control: 'My project' FIRST, then 'Demo scenarios' */}
-          <div className="grid grid-cols-2 rounded-xl bg-slate-900/90 border border-slate-800/90 p-1 shrink-0 shadow-inner">
+          {/* Neobrutalist Segmented Control: 'My project' FIRST, then 'Demo scenarios' */}
+          <div className="grid grid-cols-2 rounded-lg bg-[#0c0d14] border-2 border-black p-1 shrink-0 shadow-[3px_3px_0px_0px_#000]">
             <button
               onClick={() => handleModeChange('custom')}
               disabled={status === 'running'}
-              className={`py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 disabled:opacity-50 ${
+              className={`py-1.5 px-3 rounded-md text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 ${
                 isCustomWorkspace
-                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/25'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-850'
+                  ? 'bg-[#FFE600] text-black border-2 border-black shadow-[2px_2px_0px_0px_#000]'
+                  : 'text-slate-400 hover:text-white hover:bg-[#1c1d30]'
               }`}
             >
-              <FolderGit2 className="w-3.5 h-3.5" />
+              <FolderGit2 className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>My project</span>
             </button>
             <button
               onClick={() => handleModeChange('benchmark')}
               disabled={status === 'running'}
-              className={`py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 disabled:opacity-50 ${
+              className={`py-1.5 px-3 rounded-md text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 ${
                 !isCustomWorkspace
-                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/25'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-850'
+                  ? 'bg-[#38BDF8] text-black border-2 border-black shadow-[2px_2px_0px_0px_#000]'
+                  : 'text-slate-400 hover:text-white hover:bg-[#1c1d30]'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>Demo scenarios</span>
             </button>
           </div>

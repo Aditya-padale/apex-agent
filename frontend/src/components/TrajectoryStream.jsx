@@ -9,9 +9,6 @@ import {
   Sparkles,
   Copy,
   Check,
-  ChevronDown,
-  ChevronRight,
-  ArrowDownCircle,
 } from 'lucide-react';
 
 export default function TrajectoryStream({ events, status, currentStep, maxTurns }) {
@@ -43,35 +40,35 @@ export default function TrajectoryStream({ events, status, currentStep, maxTurns
         const isCustomWorkspace = ev.data.workspace_type === 'custom';
         const isLive = ev.data.mode === 'live' || (ev.data.mode === undefined && ev.data.has_api_key);
         return (
-          <div key={index} className="bg-gradient-to-br from-indigo-950/40 via-slate-900/60 to-slate-950/80 border border-indigo-500/30 rounded-xl p-3.5 space-y-2.5 shadow-lg shadow-indigo-500/5 animate-fade-in-up">
+          <div key={index} className="neo-card bg-[#181928] border-2 border-black shadow-[4px_4px_0px_0px_#000] p-3.5 space-y-2.5">
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-indigo-300 font-semibold text-xs">
-                <Sparkles className="w-4 h-4 text-cyan-400" />
-                <span>Agent Initialized — {ev.data.title}</span>
+              <div className="flex items-center gap-2 text-[#FFE600] font-black text-xs uppercase">
+                <Sparkles className="w-4 h-4 stroke-[2.5]" />
+                <span>AGENT INITIALIZED — {ev.data.title}</span>
               </div>
               <span
-                className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider border shadow-sm ${
+                className={`neo-badge-sm px-2.5 py-0.5 rounded text-[10px] font-mono ${
                   isLive
-                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                    : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                    ? 'bg-[#A3E635] text-black'
+                    : 'bg-[#FFE600] text-black'
                 }`}
               >
-                {isLive ? '● Live Agent' : '▲ Scripted Demo'}
+                {isLive ? '● LIVE AGENT' : '▲ SCRIPTED DEMO'}
               </span>
             </div>
-            <p className="text-xs text-slate-300 font-sans leading-relaxed">{ev.data.goal}</p>
-            <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] text-slate-400 pt-1 border-t border-slate-800/80">
-              <span className="bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
-                Model: <strong className="text-indigo-300">{ev.data.model}</strong>
+            <p className="text-xs text-white font-medium leading-relaxed">{ev.data.goal}</p>
+            <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] pt-1 border-t-2 border-black">
+              <span className="bg-[#0f101b] text-slate-300 px-2 py-0.5 rounded border border-black">
+                MODEL: <strong className="text-[#38BDF8]">{ev.data.model}</strong>
               </span>
-              <span className="bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
-                Mode: <strong className={isLive ? 'text-emerald-400' : 'text-amber-400'}>
-                  {isLive ? 'Live Autonomous Agent' : isCustomWorkspace ? 'Validation-only (no key)' : 'Scripted demo (no API key)'}
+              <span className="bg-[#0f101b] px-2 py-0.5 rounded border border-black">
+                MODE: <strong className={isLive ? 'text-[#A3E635]' : 'text-[#FFE600]'}>
+                  {isLive ? 'Live Autonomous Agent' : isCustomWorkspace ? 'Validation-only' : 'Scripted demo'}
                 </strong>
               </span>
             </div>
             {isCustomWorkspace && ev.data.validation_command && (
-              <div className="text-[10px] font-mono text-cyan-300/90 bg-slate-950/80 px-2.5 py-1 rounded border border-slate-800 break-all">
+              <div className="text-[10px] font-mono text-[#38BDF8] bg-[#0c0d14] px-2.5 py-1 rounded border-2 border-black break-all font-bold">
                 $ {ev.data.validation_command}
               </div>
             )}
@@ -82,16 +79,10 @@ export default function TrajectoryStream({ events, status, currentStep, maxTurns
       case 'step_start': {
         const turn = ev.data.step || 1;
         const total = ev.data.max_turns || maxTurns || 12;
-        const progressPercent = Math.min(100, Math.round((turn / total) * 100));
         return (
-          <div key={index} className="my-3 space-y-1">
-            <div className="flex items-center gap-3 font-mono text-xs text-slate-400">
-              <div className="h-px bg-gradient-to-r from-transparent via-slate-800 to-slate-800 flex-1" />
-              <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full text-indigo-300 font-semibold text-[11px] shadow-sm">
-                <span>Turn {turn} of {total}</span>
-                <span className="text-[10px] text-slate-500 font-normal">({progressPercent}%)</span>
-              </div>
-              <div className="h-px bg-gradient-to-l from-transparent via-slate-800 to-slate-800 flex-1" />
+          <div key={index} className="my-3 flex items-center justify-center">
+            <div className="neo-badge bg-[#FFE600] text-black px-3.5 py-1 rounded-md text-xs font-mono font-black shadow-[2px_2px_0px_0px_#000]">
+              TURN {turn} OF {total}
             </div>
           </div>
         );
@@ -99,22 +90,22 @@ export default function TrajectoryStream({ events, status, currentStep, maxTurns
 
       case 'thought':
         return (
-          <div key={index} className="glass-panel-glow p-3.5 border-l-4 border-l-violet-500 space-y-2 animate-fade-in-up">
+          <div key={index} className="neo-card bg-[#211a38] border-2 border-[#A78BFA] shadow-[4px_4px_0px_0px_#000] p-3.5 space-y-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-violet-300 font-semibold text-xs">
-                <Brain className="w-4 h-4 text-violet-400" />
-                <span>Agent Reasoning & Strategy</span>
+              <div className="flex items-center gap-2 text-[#A78BFA] font-black text-xs uppercase tracking-wide">
+                <Brain className="w-4 h-4 stroke-[2.5]" />
+                <span>AGENT REASONING & STRATEGY</span>
               </div>
               <button
                 onClick={() => handleCopy(ev.data.thought, index)}
-                className="text-slate-500 hover:text-slate-300 text-[10px] flex items-center gap-1 transition-colors"
+                className="neo-btn bg-[#0c0d14] text-slate-300 hover:text-white px-2 py-0.5 rounded text-[10px] font-mono flex items-center gap-1"
                 title="Copy thought"
               >
-                {isCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                <span>{isCopied ? 'Copied' : 'Copy'}</span>
+                {isCopied ? <Check className="w-3 h-3 text-[#A3E635]" /> : <Copy className="w-3 h-3" />}
+                <span>{isCopied ? 'COPIED' : 'COPY'}</span>
               </button>
             </div>
-            <p className="text-xs text-slate-200 font-sans leading-relaxed whitespace-pre-wrap">
+            <p className="text-xs text-slate-100 font-mono leading-relaxed whitespace-pre-wrap">
               {ev.data.thought}
             </p>
           </div>
@@ -123,28 +114,28 @@ export default function TrajectoryStream({ events, status, currentStep, maxTurns
       case 'tool_call': {
         const argsJson = JSON.stringify(ev.data.arguments || {}, null, 2);
         return (
-          <div key={index} className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-3 space-y-2 animate-fade-in-up">
+          <div key={index} className="neo-card bg-[#0f1c2b] border-2 border-[#38BDF8] shadow-[4px_4px_0px_0px_#000] p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-cyan-400 font-semibold text-xs">
-                <Wrench className="w-3.5 h-3.5" />
-                <span>Tool Execution:</span>
-                <code className="bg-slate-950 text-cyan-300 px-2 py-0.5 rounded font-mono text-[11px] border border-cyan-500/20">
+              <div className="flex items-center gap-2 font-black text-xs uppercase text-white">
+                <Wrench className="w-3.5 h-3.5 text-[#38BDF8] stroke-[2.5]" />
+                <span>TOOL EXECUTION:</span>
+                <span className="neo-badge-sm bg-[#38BDF8] text-black px-2 py-0.5 rounded font-mono text-[11px]">
                   {ev.data.tool_name}
-                </code>
+                </span>
               </div>
               {argsJson && argsJson !== '{}' && (
                 <button
                   onClick={() => handleCopy(argsJson, index)}
-                  className="text-slate-500 hover:text-slate-300 text-[10px] flex items-center gap-1 transition-colors"
+                  className="neo-btn bg-[#0c0d14] text-slate-300 hover:text-white px-2 py-0.5 rounded text-[10px] font-mono flex items-center gap-1"
                   title="Copy tool arguments"
                 >
-                  {isCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                  <span>{isCopied ? 'Copied' : 'Copy'}</span>
+                  {isCopied ? <Check className="w-3 h-3 text-[#A3E635]" /> : <Copy className="w-3 h-3" />}
+                  <span>{isCopied ? 'COPIED' : 'COPY'}</span>
                 </button>
               )}
             </div>
             {Object.keys(ev.data.arguments || {}).length > 0 && (
-              <pre className="bg-slate-950 p-2.5 rounded-lg text-[11px] font-mono text-slate-300 overflow-x-auto border border-slate-850">
+              <pre className="bg-[#0c0d14] border-2 border-black p-2.5 rounded text-[11px] font-mono text-slate-200 overflow-x-auto">
                 {argsJson}
               </pre>
             )}
@@ -157,25 +148,25 @@ export default function TrajectoryStream({ events, status, currentStep, maxTurns
         const isClean = res.success !== false && (!res.exit_code || res.exit_code === 0);
         const fullOutput = [res.stdout, res.stderr, res.message, res.error].filter(Boolean).join('\n');
         return (
-          <div key={index} className="bg-slate-950 border border-slate-800/90 rounded-xl p-3.5 space-y-2 animate-fade-in-up">
-            <div className="flex items-center justify-between border-b border-slate-850 pb-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
-                <Terminal className="w-3.5 h-3.5 text-slate-400" />
-                <span>Sandbox Observation ({ev.data.tool_name})</span>
+          <div key={index} className="neo-card bg-[#0c0d14] border-2 border-black shadow-[4px_4px_0px_0px_#000] p-3.5 space-y-2">
+            <div className="flex items-center justify-between border-b-2 border-black pb-2">
+              <div className="flex items-center gap-2 text-xs font-black uppercase text-white">
+                <Terminal className="w-3.5 h-3.5 text-slate-400 stroke-[2.5]" />
+                <span>SANDBOX OBSERVATION ({ev.data.tool_name})</span>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleCopy(fullOutput, index)}
-                  className="text-slate-500 hover:text-slate-300 text-[10px] flex items-center gap-1 transition-colors"
+                  className="neo-btn bg-[#181928] text-slate-300 hover:text-white px-2 py-0.5 rounded text-[10px] font-mono flex items-center gap-1"
                   title="Copy output"
                 >
-                  {isCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                  <span>{isCopied ? 'Copied' : 'Copy'}</span>
+                  {isCopied ? <Check className="w-3 h-3 text-[#A3E635]" /> : <Copy className="w-3 h-3" />}
+                  <span>{isCopied ? 'COPIED' : 'COPY'}</span>
                 </button>
-                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-semibold ${
-                  isClean ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
+                <span className={`neo-badge-sm px-2 py-0.5 rounded font-mono text-[10px] ${
+                  isClean ? 'bg-[#A3E635] text-black' : 'bg-[#FF3366] text-white'
                 }`}>
-                  {isClean ? 'PASS / SUCCESS' : `FAIL (Exit ${res.exit_code ?? 1})`}
+                  {isClean ? 'PASS (EXIT 0)' : `FAIL (EXIT ${res.exit_code ?? 1})`}
                 </span>
               </div>
             </div>
@@ -184,21 +175,21 @@ export default function TrajectoryStream({ events, status, currentStep, maxTurns
             <div className="space-y-2 font-mono text-[11px] max-h-64 overflow-y-auto pr-1">
               {res.stdout && (
                 <div className="space-y-0.5">
-                  <div className="text-[10px] text-slate-500 uppercase font-sans font-medium">STDOUT</div>
-                  <pre className="text-emerald-300/90 whitespace-pre-wrap bg-slate-900/60 p-2 rounded border border-slate-850">{res.stdout}</pre>
+                  <div className="text-[10px] text-slate-400 uppercase font-black">STDOUT</div>
+                  <pre className="text-[#A3E635] whitespace-pre-wrap bg-[#101912] p-2 rounded border border-black">{res.stdout}</pre>
                 </div>
               )}
               {res.stderr && (
                 <div className="space-y-0.5">
-                  <div className="text-[10px] text-rose-400 uppercase font-sans font-medium">STDERR / TRACEBACK</div>
-                  <pre className="text-rose-300/90 whitespace-pre-wrap bg-rose-950/20 p-2 rounded border border-rose-900/30">{res.stderr}</pre>
+                  <div className="text-[10px] text-[#FF3366] uppercase font-black">STDERR / TRACEBACK</div>
+                  <pre className="text-[#FF8099] whitespace-pre-wrap bg-[#241217] p-2 rounded border border-black">{res.stderr}</pre>
                 </div>
               )}
               {res.message && (
-                <div className="text-slate-300 bg-slate-900/60 p-2 rounded border border-slate-850">{res.message}</div>
+                <div className="text-slate-200 bg-[#181928] p-2 rounded border border-black">{res.message}</div>
               )}
               {res.error && (
-                <div className="text-rose-400 font-semibold bg-rose-950/30 p-2 rounded border border-rose-900/40">{res.error}</div>
+                <div className="text-[#FF3366] font-bold bg-[#241217] p-2 rounded border border-black">{res.error}</div>
               )}
             </div>
           </div>
@@ -207,31 +198,36 @@ export default function TrajectoryStream({ events, status, currentStep, maxTurns
 
       case 'workspace_update':
         return (
-          <div key={index} className="bg-emerald-950/20 border border-emerald-500/30 rounded-lg p-2.5 flex items-center justify-between text-xs text-emerald-300 animate-fade-in-up">
+          <div key={index} className="neo-card bg-[#122319] border-2 border-[#A3E635] shadow-[3px_3px_0px_0px_#000] p-2.5 flex items-center justify-between text-xs text-[#A3E635]">
             <div className="flex items-center gap-2">
-              <FileCode className="w-4 h-4 text-emerald-400" />
-              <span>Updated file in sandbox workspace:</span>
-              <strong className="font-mono">{ev.data.file_path}</strong>
+              <FileCode className="w-4 h-4 stroke-[2.5]" />
+              <span className="font-bold">MODIFIED WORKSPACE FILE:</span>
+              <strong className="font-mono bg-black text-white px-1.5 py-0.5 rounded border border-black">{ev.data.file_path}</strong>
             </div>
-            <span className="text-[10px] font-mono bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded text-emerald-200">SAVED</span>
+            <span className="neo-badge-sm bg-[#A3E635] text-black px-2 py-0.5 rounded text-[10px] font-mono">SAVED</span>
           </div>
         );
 
       case 'finished': {
         const didSucceed = ev.data.success !== false;
         return (
-          <div key={index} className={`bg-gradient-to-r to-slate-900 border-2 rounded-xl p-4 space-y-2 shadow-lg animate-fade-in-up ${
-            didSucceed ? 'from-emerald-950/60 border-emerald-500/50 shadow-emerald-500/10' : 'from-amber-950/50 border-amber-500/50 shadow-amber-500/10'
+          <div key={index} className={`neo-panel-lg p-4 space-y-2 ${
+            didSucceed ? 'bg-[#12261b] border-[#A3E635]' : 'bg-[#291b10] border-[#FB923C]'
           }`}>
-            <div className={`flex items-center gap-2 font-bold text-sm ${didSucceed ? 'text-emerald-400' : 'text-amber-400'}`}>
-              {didSucceed ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
-              <span>{didSucceed ? 'Task Completed & Verified' : 'Validation Needs Attention'}</span>
+            <div className="flex items-center justify-between">
+              <div className={`flex items-center gap-2 font-black text-sm uppercase ${didSucceed ? 'text-[#A3E635]' : 'text-[#FB923C]'}`}>
+                {didSucceed ? <CheckCircle2 className="w-5 h-5 stroke-[2.5]" /> : <AlertTriangle className="w-5 h-5 stroke-[2.5]" />}
+                <span>{didSucceed ? 'TASK COMPLETED & VERIFIED' : 'VALIDATION NEEDS ATTENTION'}</span>
+              </div>
+              <span className={`neo-badge px-2.5 py-0.5 rounded text-xs font-mono ${didSucceed ? 'bg-[#A3E635] text-black' : 'bg-[#FB923C] text-black'}`}>
+                {didSucceed ? 'PASSED' : 'UNVERIFIED'}
+              </span>
             </div>
-            <p className="text-xs text-slate-200 font-sans leading-relaxed">
+            <p className="text-xs text-white font-medium leading-relaxed">
               {ev.data.summary}
             </p>
-            <div className={`text-[11px] font-mono pt-1 ${didSucceed ? 'text-emerald-300/80' : 'text-amber-200/80'}`}>
-              Completed in {ev.data.turns} turn{ev.data.turns === 1 ? '' : 's'}{didSucceed ? ' with successful validation tests.' : ' without a verified passing result.'}
+            <div className="text-[11px] font-mono pt-1 text-slate-300 font-bold border-t-2 border-black">
+              Completed in {ev.data.turns} turn{ev.data.turns === 1 ? '' : 's'}{didSucceed ? ' with successful validation tests.' : ' without passing verification.'}
             </div>
           </div>
         );
@@ -239,12 +235,12 @@ export default function TrajectoryStream({ events, status, currentStep, maxTurns
 
       case 'error':
         return (
-          <div key={index} className="bg-rose-950/40 border border-rose-500/50 rounded-xl p-4 space-y-2 animate-fade-in-up">
-            <div className="flex items-center gap-2 text-rose-400 font-bold text-sm">
-              <AlertTriangle className="w-5 h-5" />
-              Execution Error
+          <div key={index} className="neo-panel-lg bg-[#281218] border-2 border-[#FF3366] p-4 space-y-2">
+            <div className="flex items-center gap-2 text-[#FF3366] font-black text-sm uppercase">
+              <AlertTriangle className="w-5 h-5 stroke-[2.5]" />
+              EXECUTION ERROR
             </div>
-            <p className="text-xs text-rose-200 font-mono">
+            <p className="text-xs text-white font-mono font-bold">
               {ev.data.error}
             </p>
           </div>
@@ -256,55 +252,55 @@ export default function TrajectoryStream({ events, status, currentStep, maxTurns
   };
 
   return (
-    <div className="glass-panel p-4 flex flex-col h-full overflow-hidden">
+    <div className="neo-panel p-4 flex flex-col h-full overflow-hidden">
       {/* Feed Header */}
-      <div className="flex items-center justify-between mb-3 border-b border-slate-800/80 pb-3">
+      <div className="flex items-center justify-between mb-3 border-b-2 border-black pb-3">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-cyan-400" />
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-200">ReAct Trajectory & Thought Stream</h2>
+          <Sparkles className="w-4 h-4 text-[#FFE600] stroke-[2.5]" />
+          <h2 className="text-xs font-black uppercase tracking-wider text-white">REACT TRAJECTORY STREAM</h2>
           {currentMode && (
             <span
-              className={`ml-1 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider border ${
+              className={`neo-badge-sm px-2 py-0.5 rounded text-[9px] font-mono ${
                 currentMode === 'live'
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                  : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                  ? 'bg-[#A3E635] text-black'
+                  : 'bg-[#FFE600] text-black'
               }`}
             >
-              {currentMode === 'live' ? '● Live' : '▲ Demo'}
+              {currentMode === 'live' ? '● LIVE' : '▲ DEMO'}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
           {currentStep > 0 && (
-            <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-slate-900 text-indigo-300 border border-slate-800 font-semibold">
-              Turn {currentStep} / {maxTurns || 12}
+            <span className="neo-badge-sm bg-[#1c1d30] text-[#FFE600] px-2.5 py-0.5 rounded text-[11px] font-mono font-black">
+              TURN {currentStep} / {maxTurns || 12}
             </span>
           )}
           <button
             onClick={() => setAutoScroll(!autoScroll)}
-            className={`text-[10px] px-2 py-0.5 rounded-md border transition-colors ${
+            className={`neo-btn px-2 py-0.5 rounded text-[10px] font-mono ${
               autoScroll
-                ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30'
-                : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-slate-300'
+                ? 'bg-[#FFE600] text-black'
+                : 'bg-[#181928] text-slate-400'
             }`}
-            title="Toggle automatic scrolling to latest step"
+            title="Toggle automatic scrolling"
           >
-            Auto-scroll {autoScroll ? 'ON' : 'OFF'}
+            SCROLL {autoScroll ? 'ON' : 'OFF'}
           </button>
         </div>
       </div>
 
       {/* Stream List */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto space-y-3.5 pr-1">
+      <div ref={containerRef} className="flex-1 overflow-y-auto space-y-3 pr-1">
         {events.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-3 py-12">
-            <div className="w-12 h-12 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-center shadow-inner">
-              <Brain className="w-6 h-6 text-slate-600 stroke-1" />
+            <div className="w-12 h-12 rounded-xl bg-[#10111a] border-2 border-black shadow-[3px_3px_0px_0px_#000] flex items-center justify-center">
+              <Brain className="w-6 h-6 text-[#FFE600] stroke-[2.5]" />
             </div>
             <div className="text-center space-y-1 max-w-xs">
-              <p className="text-xs font-semibold text-slate-300">No active execution trajectory</p>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                Configure your project or choose a benchmark scenario on the left, then click "Run" to watch ApexAgent work in real-time.
+              <p className="text-xs font-black uppercase text-white tracking-wide">NO ACTIVE EXECUTION</p>
+              <p className="text-[11px] text-slate-400 font-medium">
+                Set up your project or choose a scenario on the left, then click "Run" to trigger the ReAct loop.
               </p>
             </div>
           </div>
