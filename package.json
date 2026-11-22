@@ -6,7 +6,7 @@
   "scripts": {
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "uvicorn backend.main:app --reload --port 8000",
-    "build": "cd frontend && npm run build",
+    "build": "npm --prefix frontend ci && npm --prefix frontend run build",
     "preview": "cd frontend && npm run preview"
   },
   "keywords": [

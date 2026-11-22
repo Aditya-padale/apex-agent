@@ -32,6 +32,7 @@ def test_health_check(client):
     data = res.json()
     assert data["status"] == "ok"
     assert "ApexAgent" in data["service"]
+    assert data["code_execution_enabled"] is False
 
 
 def test_list_scenarios(client):

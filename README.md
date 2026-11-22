@@ -39,7 +39,7 @@ Traditional AI coding assistants suggest raw snippets, leaving developers to man
 ## Key Features
 
 - **Groq LPU Engine**: Leverages high-speed Groq inference with the `openai/gpt-oss-20b` model for deep multi-turn code reasoning and function calling.
-- **Serverless-Native Architecture**: Fully configured for 1-click deployment on **Vercel** with a unified monorepo structure (FastAPI Python Serverless Functions + React SPA).
+- **Serverless-Native Architecture**: Fully configured for a single Vercel deployment: a Vite SPA and a FastAPI serverless service share one domain, with `/api/*` routed to FastAPI.
 - **Real-Time Event Streaming (SSE)**: Streams step-by-step agent trajectories, tool invocations, stdout logs, and status updates directly to the UI.
 - **Isolated Execution Sandbox**: Safely run Python scripts, unit test suites (pytest), search code patterns, and modify workspace files.
 - **Benchmark Scenarios**: Built-in debugging benchmarks ranging from algorithmic edge cases (Binary Search) to corrupted log processing pipelines and async HTTP backoff retries.
@@ -92,8 +92,6 @@ flowchart TD
 
 ```
 apex-agent/
-├── api/
-│   └── index.py             # Serverless bridge for Vercel Python Functions
 ├── backend/
 │   ├── agent/               # Autonomous ReAct Agent core & tool definitions
 │   │   ├── core.py          # ApexAgentEngine (Groq client & event stream)
@@ -112,6 +110,7 @@ apex-agent/
 │   ├── package.json         # Frontend Node.js dependencies
 │   └── vite.config.js       # Vite configuration & proxy settings
 ├── vercel.json              # Vercel deployment configuration
+├── .python-version           # Python runtime selected for Vercel
 ├── requirements.txt         # Root Python requirements for Vercel build
 ├── package.json             # Root monorepo scripts & metadata
 └── README.md                # Project documentation
@@ -121,7 +120,9 @@ apex-agent/
 
 ## Vercel Deployment Guide
 
-Deploy Apex Agent to Vercel in less than 2 minutes:
+The included `vercel.json` uses Vercel Services: Vite is built from `frontend/`,
+FastAPI is built from `backend/`, and both are deployed to the same domain.
+Requests to `/api/*` reach FastAPI without a separate backend URL or CORS setup.
 
 ### Option A: 1-Click Deployment (Recommended)
 
@@ -131,7 +132,12 @@ Deploy Apex Agent to Vercel in less than 2 minutes:
 2. Link your GitHub repository.
 3. In the **Environment Variables** section, configure:
    - `GROQ_API_KEY`: Your Groq API Key ([Get an API key here](https://console.groq.com/keys)).
-4. Click **Deploy**. Vercel will build the frontend and deploy the Python serverless API functions automatically!
+   - `MAX_RUN_SECONDS=50`: Keeps the agent below the configured 60-second
+     serverless function duration.
+   - `ALLOW_CODE_EXECUTION=false`: Required for a public deployment. The
+     built-in scenarios still work; do not execute user-supplied projects in a
+     Vercel Function.
+4. Click **Deploy**. Vercel builds and deploys the frontend and FastAPI service together.
 
 ### Option B: Deploy via Vercel CLI
 
@@ -142,15 +148,25 @@ npm i -g vercel
 # 2. Login to Vercel
 vercel login
 
-# 3. Deploy to production
+# 3. Start both services locally with Vercel routing (optional)
+vercel dev -L
+
+# 4. Deploy to production
 vercel --prod
 ```
 
 > [!NOTE]
-> Ensure you add your `GROQ_API_KEY` in the Vercel Dashboard under **Project Settings > Environment Variables**.
+> Add `GROQ_API_KEY`, `MAX_RUN_SECONDS`, and `ALLOW_CODE_EXECUTION` under
+> **Project Settings > Environment Variables**, then redeploy. Keep secrets
+> server-side; never use a `VITE_`-prefixed variable for them.
 
 > [!WARNING]
-> **Serverless Limitations**: Vercel Serverless Functions have a maximum execution duration (configured to `maxDuration: 60` seconds in `vercel.json`). Long agent trajectories, large test suites, and subprocess-heavy tasks are a poor fit for serverless functions due to cold starts, execution timeouts, and ephemeral container filesystems. For production workloads with multi-turn ReAct loops, deploy the backend as a persistent service (see below).
+> **Serverless limitations**: The FastAPI service is capped at 60 seconds per
+> request and has an ephemeral filesystem. SSE is supported, but a long agent
+> trajectory may end at the timeout. This project defaults agent runs to 50
+> seconds so it can send a clean completion event first. For untrusted code or
+> longer jobs, use a dedicated sandbox/worker service instead of enabling code
+> execution in Vercel.
 
 ---
 
@@ -210,7 +226,7 @@ cp backend/.env.example backend/.env
 | `ALLOW_PACKAGE_INSTALL` | `false` | When `false`, blocks `pip install`, `npm install`, and `yarn add` commands inside the sandbox. |
 | `CORS_ORIGINS` | `http://localhost:5173` | Comma-separated list of allowed web origins for CORS headers (`allow_credentials=False`). |
 | `APEX_ACCESS_TOKEN` | *(None)* | Optional server secret. When configured, callers must pass this exact token in the `X-Access-Token` header. |
-| `MAX_RUN_SECONDS` | `150` | Hard wall-clock budget in seconds for an agent run before emitting a clean timeout event. |
+| `MAX_RUN_SECONDS` | `50` | Hard wall-clock budget in seconds for an agent run before emitting a clean timeout event. Keep at `50` or less on Vercel. |
 | `RATE_LIMIT_RPM` | `5` | In-memory sliding-window per-IP rate limit on `/api/run-agent` and `/api/test-sandbox`. Set to `0` to disable. |
 | `VITE_API_BASE_URL` | `/api` | Frontend API base URL. Configure when deploying backend on a separate domain (e.g. Railway/Render). |
 

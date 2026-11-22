@@ -5,13 +5,14 @@ import ScenarioSelector from './components/ScenarioSelector';
 import TrajectoryStream from './components/TrajectoryStream';
 import WorkspaceViewer from './components/WorkspaceViewer';
 import ApiKeyModal from './components/ApiKeyModal';
-import { fetchScenarios, streamAgentRun } from './api';
+import { fetchHealth, fetchScenarios, streamAgentRun } from './api';
 
 export default function App() {
   const [scenarios, setScenarios] = useState([]);
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [benchmarkPrompt, setBenchmarkPrompt] = useState('');
   const [loadingScenarios, setLoadingScenarios] = useState(true);
+  const [codeExecutionEnabled, setCodeExecutionEnabled] = useState(null);
   const [workspaceMode, setWorkspaceMode] = useState('benchmark');
 
   const [workspaceFiles, setWorkspaceFiles] = useState({});
@@ -46,6 +47,13 @@ export default function App() {
         console.error('Failed to load scenarios:', error);
       } finally {
         setLoadingScenarios(false);
+      }
+
+      try {
+        const health = await fetchHealth();
+        setCodeExecutionEnabled(Boolean(health.code_execution_enabled));
+      } catch (error) {
+        console.warn('Could not determine whether custom workspace execution is enabled:', error);
       }
     }
     loadScenarios();
@@ -230,6 +238,7 @@ export default function App() {
                 onRunAgent={handleRunCustomWorkspace}
                 onCancelAgent={handleCancelAgent}
                 status={status}
+                codeExecutionEnabled={codeExecutionEnabled}
               />
             ) : (
               <ScenarioSelector

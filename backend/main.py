@@ -49,7 +49,12 @@ def check_rate_limit(request: Request):
     """Enforce per-IP sliding window rate limiting."""
     if RATE_LIMIT_RPM <= 0:
         return
-    client_ip = request.client.host if request.client else "unknown"
+    # Vercel terminates the client connection at its edge. Prefer the first
+    # forwarding address so all visitors do not share the function proxy IP.
+    forwarded_for = request.headers.get("x-forwarded-for", "")
+    client_ip = forwarded_for.split(",", 1)[0].strip() or (
+        request.client.host if request.client else "unknown"
+    )
     now = time.time()
     window = 60.0
     history = _rate_limit_history.setdefault(client_ip, [])
@@ -138,7 +143,11 @@ def api_root():
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok", "service": "ApexAgent Backend Core"}
+    return {
+        "status": "ok",
+        "service": "ApexAgent Backend Core",
+        "code_execution_enabled": ALLOW_CODE_EXECUTION,
+    }
 
 @app.get("/api/scenarios")
 def list_scenarios():

@@ -41,8 +41,10 @@ You must be relentless in making tests pass cleanly. Never give up on a tracebac
 
 DEFAULT_MODEL = "openai/gpt-oss-20b"
 
-# Hard per-run wall-clock budget in seconds, configurable via env.
-MAX_RUN_SECONDS = int(os.environ.get("MAX_RUN_SECONDS", "150"))
+# Hard per-run wall-clock budget in seconds, configurable via env. Keep the
+# default below the Vercel Function duration configured for this project so an
+# SSE request ends cleanly before the platform terminates it.
+MAX_RUN_SECONDS = int(os.environ.get("MAX_RUN_SECONDS", "50"))
 
 # Retry config for transient API errors (429 / 5xx)
 _MAX_API_RETRIES = 2

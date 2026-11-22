@@ -56,6 +56,7 @@ export default function ProjectSetupPanel({
   onRunAgent,
   onCancelAgent,
   status,
+  codeExecutionEnabled,
 }) {
   const inputRef = useRef(null);
   const [importMessage, setImportMessage] = useState('');
@@ -63,6 +64,7 @@ export default function ProjectSetupPanel({
   const [newFileContent, setNewFileContent] = useState('');
 
   const isRunning = status === 'running';
+  const customExecutionDisabled = codeExecutionEnabled === false;
   const fileCount = Object.keys(workspaceFiles).length;
 
   const handleFolderInput = async (event) => {
@@ -224,7 +226,10 @@ export default function ProjectSetupPanel({
 
       <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5 flex gap-2 text-[10px] leading-relaxed text-amber-100/80">
         <ShieldAlert className="w-4 h-4 shrink-0 text-amber-400" />
-        <span>Only import projects you trust. Build and test scripts execute project code on this machine.</span>
+        <span>{customExecutionDisabled
+          ? 'This deployment disables custom workspace execution. Built-in demo scenarios are still available.'
+          : 'Only import projects you trust. Build and test scripts execute project code on this machine.'}
+        </span>
       </div>
 
       {isRunning ? (
@@ -237,7 +242,7 @@ export default function ProjectSetupPanel({
       ) : (
         <button
           onClick={onRunAgent}
-          disabled={!fileCount || !goal.trim()}
+          disabled={!fileCount || !goal.trim() || customExecutionDisabled}
           className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-semibold text-xs flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Play className="w-4 h-4 fill-current" /> Run my workspace
