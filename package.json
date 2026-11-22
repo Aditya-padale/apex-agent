@@ -2,7 +2,7 @@
   "name": "apex-agent",
   "version": "1.0.0",
   "private": true,
-  "description": "Autonomous Agentic Coding & Debugging Platform powered by Gemini 2.5 Flash",
+  "description": "Autonomous Agentic Coding & Debugging Platform powered by gemini-2.5-flash",
   "scripts": {
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "uvicorn backend.main:app --reload --port 8000",

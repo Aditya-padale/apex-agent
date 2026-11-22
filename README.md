@@ -3,7 +3,7 @@
 <div align="center">
 
 [![Vercel Deployment](https://img.shields.io/badge/Vercel-Serverless_Ready-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com)
-[![Gemini Powered](https://img.shields.io/badge/Powered_by-Google_Gemini_2.5_Flash-8E75FF?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+[![Gemini Powered](https://img.shields.io/badge/Powered_by-Gemini_2.5_Flash-8E75FF?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI_Python_3.11-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![React + Vite](https://img.shields.io/badge/Frontend-React_18_+_Vite-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://vitejs.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
@@ -25,7 +25,7 @@ Traditional AI coding assistants suggest raw snippets, leaving developers to man
 ```
 ┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
 │   Agent Thought │ ───► │    Tool Call    │ ───► │ Sandbox Execution│ ───► │ Self-Correction │
-│ (Gemini 2.5)    │      │  (Read/Write)   │      │ (Pytest/Run)    │      │  & Verification │
+│ (Gemini 2.5 Flash)│      │  (Read/Write)   │      │ (Pytest/Run)    │      │  & Verification │
 └─────────────────┘      └─────────────────┘      └─────────────────┘      └─────────────────┘
 ```
 
@@ -38,7 +38,7 @@ Traditional AI coding assistants suggest raw snippets, leaving developers to man
 
 ## ✨ Key Features
 
-- 🧠 **Gemini 2.5 Flash Engine**: Leverages Google's high-speed, long-context Gemini models for deep multi-turn code reasoning and function calling.
+- 🧠 **Gemini 2.5 Flash Engine**: Leverages Google's `gemini-2.5-flash` model for multi-turn code reasoning and function calling.
 - ⚡ **Serverless-Native Architecture**: Fully configured for 1-click deployment on **Vercel** with a unified monorepo structure (FastAPI Python Serverless Functions + React SPA).
 - 📡 **Real-Time Event Streaming (SSE)**: Streams step-by-step agent trajectories, tool invocations, stdout logs, and status updates directly to the UI.
 - 🧪 **Isolated Execution Sandbox**: Safely run Python scripts, unit test suites (pytest), search code patterns, and modify workspace files.

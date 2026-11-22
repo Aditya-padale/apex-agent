@@ -74,8 +74,8 @@ export default function Header({
             disabled={status === 'running'}
             className="bg-transparent text-slate-200 font-mono focus:outline-none cursor-pointer disabled:opacity-50"
           >
-            <option value="gemini-3.5-flash" className="bg-slate-900 text-slate-200">
-              gemini-3.5-flash (Free)
+            <option value="gemini-2.5-flash" className="bg-slate-900 text-slate-200">
+              gemini-2.5-flash
             </option>
             <option value="gemini-2.5-pro" className="bg-slate-900 text-slate-200">
               gemini-2.5-pro

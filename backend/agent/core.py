@@ -36,7 +36,7 @@ WORKSPACE PROTOCOL:
 
 You must be relentless in making tests pass cleanly. Never give up on a traceback!"""
 
-DEFAULT_MODEL = "gemini-3.5-flash"
+DEFAULT_MODEL = "gemini-2.5-flash"
 
 class ApexAgentEngine:
     """

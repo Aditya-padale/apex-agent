@@ -60,7 +60,7 @@ export async function streamAgentRun(params, onEvent, onError, onDone, signal) {
       custom_prompt: params.custom_prompt || undefined,
       validation_command: params.validation_command || undefined,
       setup_command: params.setup_command || undefined,
-      model_name: params.model_name || 'gemini-3.5-flash',
+      model_name: params.model_name || 'gemini-2.5-flash',
       api_key: params.api_key || undefined,
       max_turns: params.max_turns,
     }),

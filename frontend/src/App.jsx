@@ -27,7 +27,7 @@ export default function App() {
   const [currentStep, setCurrentStep] = useState(0);
   const [maxTurns, setMaxTurns] = useState(12);
 
-  const [modelName, setModelName] = useState('gemini-3.5-flash');
+  const [modelName, setModelName] = useState('gemini-2.5-flash');
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const abortControllerRef = useRef(null);
